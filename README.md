@@ -36,6 +36,33 @@ An ultra-fast, zero-RAM, hardware-accelerated semantic vector search plugin for 
 
 ---
 
+## 📂 Project Structure
+
+```text
+npu-search/
+├── main.js                  # Obsidian plugin GUI & event loop
+├── styles.css               # HiDPI vector styling and animations
+├── manifest.json            # Obsidian plugin metadata
+├── README.md                # Documentation
+└── scripts/
+    └── npu_vault_search.py  # Standalone OpenVINO NPU inference engine
+```
+
+### Standalone CLI Usage:
+You can also run the Python engine directly from terminal:
+```bash
+# Semantic query
+python scripts/npu_vault_search.py --query "docker container deployment" --top-k 5
+
+# Focused search in Knowledge Map (MOC)
+python scripts/npu_vault_search.py --query "backup strategy" --filter moc
+
+# Rebuild vector index on NPU
+python scripts/npu_vault_search.py --build-index
+```
+
+---
+
 ## 🚀 Installation
 
 1. Copy or clone this folder into your Obsidian vault's plugins directory:

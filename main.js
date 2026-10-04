@@ -1,8 +1,24 @@
 const { Plugin, Modal, Notice } = require('obsidian');
 const { execFile } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
 const PYTHON_BIN = "/home/direkt/Seafile/sync/projekts/Puthon/local_ai/.venv/bin/python";
-const SCRIPT_PATH = "/home/direkt/Seafile/sync/projekts/Puthon/local_ai/scripts/npu_vault_search.py";
+
+function getScriptPath(app) {
+    try {
+        const vaultPath = app.vault.adapter.getBasePath ? app.vault.adapter.getBasePath() : '';
+        if (vaultPath) {
+            const pluginScript = path.join(vaultPath, '.obsidian', 'plugins', 'npu-search', 'scripts', 'npu_vault_search.py');
+            if (fs.existsSync(pluginScript)) {
+                return pluginScript;
+            }
+        }
+    } catch (e) {}
+
+    const fallback = "/home/direkt/Seafile/sync/projekts/Puthon/local_ai/scripts/npu_vault_search.py";
+    return fallback;
+}
 
 class NPUSearchModal extends Modal {
     constructor(app) {
@@ -151,8 +167,9 @@ class NPUSearchModal extends Modal {
                 cls: 'npu-loading-text' 
             });
 
+            const scriptPath = getScriptPath(this.app);
             const args = [
-                SCRIPT_PATH, 
+                scriptPath, 
                 '--query', query, 
                 '--json', 
                 '--top-k', '10',
@@ -482,7 +499,8 @@ module.exports = class NPUSearchPlugin extends Plugin {
             name: 'Пересобрать векторный NPU-индекс заметок',
             callback: () => {
                 new Notice('⚡ Пересборка векторного индекса на Intel NPU...');
-                execFile(PYTHON_BIN, [SCRIPT_PATH, '--build-index'], (error, stdout, stderr) => {
+                const scriptPath = getScriptPath(this.app);
+                execFile(PYTHON_BIN, [scriptPath, '--build-index'], (error, stdout, stderr) => {
                     if (error) {
                         new Notice('❌ Ошибка пересборки: ' + error.message, 5000);
                     } else {

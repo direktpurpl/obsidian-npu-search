@@ -1,3 +1,7 @@
 node_modules/
 *.log
 .DS_Store
+*.npz
+model_cache/
+models/
+__pycache__/
