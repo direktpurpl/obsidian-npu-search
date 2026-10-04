@@ -27,12 +27,15 @@ def resolve_api_key(args_key: str = "", vault_dir: str = "") -> str:
         return env_key
 
     # Auto-discover from local-rest-api data.json if available
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    real_script_path = os.path.realpath(__file__)
+    script_dir = os.path.dirname(real_script_path)
+    vault_from_script = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir))))
+
     candidates = [
         vault_dir,
         os.environ.get("OBSIDIAN_VAULT_PATH", ""),
-        # If script is in <vault>/.obsidian/plugins/npu-search/scripts:
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))),
+        vault_from_script,
+        "/home/direkt/Документы/learn"
     ]
     for v in candidates:
         if not v:
@@ -185,7 +188,7 @@ def resolve_index_file(custom_path: str = "") -> str:
     env_path = os.environ.get("NPU_INDEX_FILE", "")
     if env_path:
         return env_path
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.path.dirname(os.path.realpath(__file__))
     return os.path.join(script_dir, "vault_embeddings.npz")
 
 
