@@ -1,0 +1,407 @@
+/* Нативное окно Obsidian с поддержкой четких шрифтов и увеличенной шириной */
+.modal.npu-modal-window {
+    width: 760px !important;
+    max-width: 92vw !important;
+    border-radius: 12px;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--background-modifier-border);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+.npu-search-modal {
+    padding: 20px 24px;
+    font-family: var(--font-text), var(--font-default), system-ui, -apple-system, sans-serif;
+}
+
+/* Заголовок */
+.npu-search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.npu-header-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.npu-header-icon {
+    font-size: 1.35rem;
+}
+
+.npu-search-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.npu-header-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--interactive-accent);
+    background: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    padding: 3px 9px;
+    border-radius: 12px;
+    letter-spacing: 0.2px;
+}
+
+/* Строка ввода (Flexbox, исключает наложение иконок) */
+.npu-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.npu-input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 42px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.npu-input-wrapper:focus-within {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb, 120, 110, 240), 0.25);
+}
+
+.npu-search-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.npu-search-svg {
+    display: block;
+}
+
+.npu-search-input {
+    flex: 1;
+    height: 100%;
+    padding: 0 !important;
+    margin: 0;
+    font-size: 14.5px;
+    font-family: inherit;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-normal);
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.npu-clear-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    padding: 0;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.npu-clear-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.npu-search-btn {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 8px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+    font-size: 13.5px;
+    cursor: pointer;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.npu-search-btn:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.npu-search-btn.loading {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+/* Панель фильтров категорий */
+.npu-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.npu-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 16px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    user-select: none;
+    line-height: 1.2;
+}
+
+.npu-filter-chip:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+}
+
+.npu-filter-chip.active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+    font-weight: 600;
+}
+
+.npu-section-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    padding-left: 2px;
+}
+
+/* Список результатов */
+.npu-search-results {
+    max-height: 450px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding-right: 4px;
+}
+
+.npu-search-results::-webkit-scrollbar {
+    width: 6px;
+}
+
+.npu-search-results::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+}
+
+.npu-result-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    gap: 16px;
+}
+
+.npu-result-card.moc-featured {
+    border-left: 3px solid #10b981;
+    background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, var(--background-secondary) 40%);
+}
+
+.npu-result-card:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+}
+
+.npu-result-card.selected {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+    box-shadow: inset 3px 0 0 var(--interactive-accent), 0 0 0 1px var(--interactive-accent);
+}
+
+.npu-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Полное имя файла без обрезки и многоточия */
+.npu-result-title {
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--text-normal);
+    line-height: 1.35;
+    word-break: break-word;
+    white-space: normal;
+}
+
+.npu-result-path {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.3;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.npu-folder-icon {
+    font-size: 11px;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.npu-result-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    flex-shrink: 0;
+    min-width: 90px;
+}
+
+.npu-badge-score {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    letter-spacing: 0.2px;
+}
+
+.npu-badge-score.score-high {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.npu-badge-score.score-mid {
+    color: var(--interactive-accent);
+    border-color: var(--interactive-accent);
+    background: rgba(var(--interactive-accent-rgb, 120, 110, 240), 0.12);
+}
+
+.npu-badge-score.score-low {
+    color: var(--text-muted);
+    border-color: var(--background-modifier-border);
+}
+
+.npu-badge-latency {
+    font-size: 10.5px;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+
+.npu-loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 35px 20px;
+    color: var(--text-muted);
+}
+
+.npu-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--background-modifier-border);
+    border-top: 2px solid var(--interactive-accent);
+    border-radius: 50%;
+    animation: npu-spin 0.8s linear infinite;
+}
+
+@keyframes npu-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.npu-empty-state {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.npu-empty-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-normal);
+    margin-bottom: 6px;
+}
+
+.npu-empty-desc {
+    font-size: 12px;
+    color: var(--text-faint);
+    line-height: 1.4;
+}
+
+.npu-empty-state.error {
+    color: var(--text-error);
+}
+
+/* Футер с клавишами */
+.npu-search-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--background-modifier-border);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.npu-shortcut-hint {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.npu-shortcut-hint kbd {
+    background: var(--background-secondary-alt);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-family: inherit;
+    color: var(--text-normal);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}

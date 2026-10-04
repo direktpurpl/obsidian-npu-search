@@ -1,0 +1,9 @@
+{
+  "id": "npu-search",
+  "name": "Intel NPU Semantic Search",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Аппаратный семантический векторный поиск по заметкам на базе чипа Intel AI Boost NPU и OpenVINO.",
+  "author": "Antigravity & direkt",
+  "isDesktopOnly": true
+}
