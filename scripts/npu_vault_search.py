@@ -28,6 +28,7 @@ import math
 import os
 import re
 import sqlite3
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -43,6 +44,7 @@ SNIPPET_CHARS = 1200
 SECTION_CHARS = 1000
 MAX_CHUNKS_PER_NOTE = 40
 MAX_SEQ_LEN = 512
+BATCH_SIZE = 16
 INDEX_VERSION = 4
 FTS_SCHEMA_VERSION = 1
 FTS_TOKENIZER = "unicode61 remove_diacritics 2"
@@ -378,6 +380,9 @@ class Embedder:
         self.static_shape = False
         self.load_time_ms = 0.0
         self.available_devices: list[str] = []
+        self._batch_compiled = None
+        self._batch_input_names: list[str] = []
+        self._batch_runner_ready = False
         self._load_model()
 
     def _device_candidates(self) -> list[str]:
@@ -495,6 +500,105 @@ class Embedder:
         if norm > 0:
             embedding = embedding / norm
         return embedding.astype(np.float32)
+
+    def _ensure_batch_runner(self) -> None:
+        """Compile a dynamic-shape model once; None keeps the per-text fallback.
+
+        Static-shape devices (the NPU is reshaped to batch=1) reject dynamic
+        shapes, so batching falls back to another available accelerator and,
+        as a last resort, to the single-text loop.
+        """
+        if self._batch_runner_ready:
+            return
+        self._batch_runner_ready = True
+
+        candidates = [self.device]
+        for name in self.available_devices:
+            if name.upper().startswith("GPU") and name not in candidates:
+                candidates.append(name)
+        if "CPU" not in candidates:
+            candidates.append("CPU")
+
+        import openvino as ov
+
+        core = ov.Core()
+        try:
+            cache_dir = resolve_cache_dir()
+            os.makedirs(cache_dir, exist_ok=True)
+            core.set_property({"CACHE_DIR": cache_dir})
+        except Exception:
+            pass
+
+        errors = []
+        for candidate in candidates:
+            try:
+                model = core.read_model(resolve_model_xml(self.model_dir))
+                names = [inp.get_any_name() for inp in model.inputs]
+                model.reshape({name: [-1, -1] for name in names})
+                compiled = core.compile_model(model, candidate)
+            except Exception as exc:
+                errors.append(f"{candidate}: {str(exc).splitlines()[0][:160]}")
+                continue
+
+            self._batch_compiled = compiled
+            self._batch_input_names = [inp.get_any_name() for inp in compiled.inputs]
+            if candidate != self.device:
+                sys.stderr.write(
+                    f"[INFO] Batched indexing on {candidate} "
+                    f"({self.device} does not support dynamic shapes)\n"
+                )
+            return
+
+        sys.stderr.write(
+            f"[INFO] Batched inference unavailable, embedding texts one by one: "
+            f"{' | '.join(errors)}\n"
+        )
+
+    def embed_texts(self, texts: list[str]) -> list[np.ndarray]:
+        """Embed a list of texts in batches of BATCH_SIZE (one call per batch)."""
+        if not texts:
+            return []
+
+        self._ensure_batch_runner()
+        if self._batch_compiled is None:
+            return [self.embed_text(text) for text in texts]
+
+        vectors: list[np.ndarray] = []
+        for start in range(0, len(texts), BATCH_SIZE):
+            batch = texts[start:start + BATCH_SIZE]
+            encoded = [self.tokenizer.encode(text) for text in batch]
+            length = max(len(item.ids) for item in encoded)
+            input_ids = np.zeros((len(batch), length), dtype=np.int64)
+            attention_mask = np.zeros((len(batch), length), dtype=np.int64)
+            token_type_ids = np.zeros((len(batch), length), dtype=np.int64)
+            for row, item in enumerate(encoded):
+                size = len(item.ids)
+                input_ids[row, :size] = item.ids
+                attention_mask[row, :size] = item.attention_mask
+                token_type_ids[row, :size] = item.type_ids
+
+            inputs = {}
+            for name in self._batch_input_names:
+                if name == "input_ids":
+                    inputs[name] = input_ids
+                elif name == "attention_mask":
+                    inputs[name] = attention_mask
+                elif name == "token_type_ids":
+                    inputs[name] = token_type_ids
+
+            last_hidden_state = self._batch_compiled(inputs)[self._batch_compiled.output(0)]
+            if last_hidden_state.ndim == 2:
+                batch_vectors = last_hidden_state
+            else:
+                mask = attention_mask.astype(np.float32)[:, :, None]
+                summed = np.sum(last_hidden_state * mask, axis=1)
+                counts = np.clip(np.sum(mask, axis=1), a_min=1e-9, a_max=None)
+                batch_vectors = summed / counts
+
+            norms = np.linalg.norm(batch_vectors, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            vectors.extend((batch_vectors / norms).astype(np.float32))
+        return vectors
 
 
 def load_index(index_file: str):
@@ -745,7 +849,7 @@ def build_or_update_index(
             content = clean_markdown(raw)
             note_tags = extract_note_tags(raw)
             chunks = split_note_into_chunks(note_title(rel_path), content)
-            chunk_vectors = [embedder.embed_text(chunk["text"]) for chunk in chunks]
+            chunk_vectors = embedder.embed_texts([chunk["text"] for chunk in chunks])
             chunk_sections = [chunk["section"] for chunk in chunks]
             chunk_breadcrumbs = [chunk["breadcrumb"] for chunk in chunks]
             payloads[rel_path] = {
@@ -784,17 +888,21 @@ def build_or_update_index(
 
     vectors_arr = np.array(vectors, dtype=np.float32)
     os.makedirs(os.path.dirname(os.path.abspath(index_file)), exist_ok=True)
-    np.savez_compressed(
-        index_file,
-        files=np.array(files),
-        vectors=vectors_arr,
-        sections=np.array(sections),
-        breadcrumbs=np.array(breadcrumbs),
-        tags=np.array(tags_column),
-        mtimes=np.array(mtimes, dtype=np.int64),
-        sizes=np.array(sizes, dtype=np.int64),
-        version=np.array(INDEX_VERSION, dtype=np.int64),
-    )
+    # Write atomically: a background reindex may run while searches read the npz.
+    tmp_file = index_file + ".tmp"
+    with open(tmp_file, "wb") as fh:
+        np.savez_compressed(
+            fh,
+            files=np.array(files),
+            vectors=vectors_arr,
+            sections=np.array(sections),
+            breadcrumbs=np.array(breadcrumbs),
+            tags=np.array(tags_column),
+            mtimes=np.array(mtimes, dtype=np.int64),
+            sizes=np.array(sizes, dtype=np.int64),
+            version=np.array(INDEX_VERSION, dtype=np.int64),
+        )
+    os.replace(tmp_file, index_file)
     elapsed = time.time() - started
     sys.stderr.write(
         f"[INFO] Index saved: {len(set(files))} notes / {len(files)} chunks, "
@@ -960,6 +1068,81 @@ def boost_coefficient(tokens: list[str], section: str, rel_path: str, tags: str)
     return min(boost, 2.0)
 
 
+def reindex_lock_path(index_file: str) -> str:
+    return index_file + ".lock"
+
+
+def _process_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def release_reindex_lock(index_file: str) -> None:
+    """Drop the lock file when it belongs to this process (end of a rebuild)."""
+    lock_file = reindex_lock_path(index_file)
+    try:
+        with open(lock_file, "r", encoding="utf-8") as fh:
+            pid = int(fh.read().strip() or 0)
+    except (OSError, ValueError):
+        return
+    if pid == os.getpid():
+        try:
+            os.remove(lock_file)
+        except OSError:
+            pass
+
+
+def start_background_reindex(
+    index_file: str,
+    vault_path: str = "",
+    model_dir: str = "",
+    device: str = "auto",
+) -> bool:
+    """Spawn a detached one-shot `--build-index` process; False if one is busy."""
+    lock_file = reindex_lock_path(index_file)
+    try:
+        with open(lock_file, "r", encoding="utf-8") as fh:
+            running_pid = int(fh.read().strip() or 0)
+    except (OSError, ValueError):
+        running_pid = 0
+    if running_pid != os.getpid() and _process_alive(running_pid):
+        return False
+
+    log_file = os.path.join(data_dir(), "reindex.log")
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    command = [sys.executable, os.path.abspath(__file__), "--build-index"]
+    if vault_path:
+        command.extend(["--vault-path", vault_path])
+    if index_file:
+        command.extend(["--index-file", index_file])
+    if model_dir:
+        command.extend(["--model-dir", model_dir])
+    if device:
+        command.extend(["--device", device])
+
+    os.makedirs(os.path.dirname(os.path.abspath(index_file)), exist_ok=True)
+    with open(log_file, "ab") as log:
+        process = subprocess.Popen(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=log,
+            stderr=log,
+            start_new_session=True,
+        )
+    with open(lock_file, "w", encoding="utf-8") as fh:
+        fh.write(str(process.pid))
+    return True
+
+
 def search_vault(
     query: str,
     top_k: int = 5,
@@ -1005,12 +1188,18 @@ def search_vault(
                 client, index_path, vault_path=vault_path,
                 files=files, mtimes=mtimes, sizes=sizes,
             ):
-                sys.stderr.write("[INFO] Vault changes detected, updating index...\n")
-                index_data = build_or_update_index(
-                    client, embedder, index_file=index_path, vault_path=vault_path, force=False
-                )
-                if index_data:
-                    files, vectors, sections, mtimes, sizes, breadcrumbs, tags = index_data
+                # Never block the query: rebuild in a detached one-shot process.
+                if start_background_reindex(
+                    index_path, vault_path=vault_path,
+                    model_dir=model_dir, device=device,
+                ):
+                    sys.stderr.write(
+                        "[INFO] Vault changes detected, background reindex started\n"
+                    )
+                else:
+                    sys.stderr.write(
+                        "[INFO] Vault changes detected, reindex already running\n"
+                    )
         except Exception as exc:
             sys.stderr.write(f"[WARNING] Index auto-sync failed: {exc}\n")
 
@@ -1209,9 +1398,12 @@ def main() -> None:
         client = ObsidianClient(base_url=args.rest_url, api_key=api_key)
         embedder = Embedder(device=args.device, model_dir=args.model_dir)
         index_path = resolve_index_file(args.index_file, vault_path)
-        build_or_update_index(
-            client, embedder, index_file=index_path, vault_path=vault_path, force=True
-        )
+        try:
+            build_or_update_index(
+                client, embedder, index_file=index_path, vault_path=vault_path, force=True
+            )
+        finally:
+            release_reindex_lock(index_path)
         if not args.query:
             return
 
