@@ -24,8 +24,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
+import sqlite3
 import sys
 import time
 import urllib.parse
@@ -41,7 +43,14 @@ SNIPPET_CHARS = 1200
 SECTION_CHARS = 1000
 MAX_CHUNKS_PER_NOTE = 40
 MAX_SEQ_LEN = 512
-INDEX_VERSION = 3
+INDEX_VERSION = 4
+FTS_SCHEMA_VERSION = 1
+FTS_TOKENIZER = "unicode61 remove_diacritics 2"
+RRF_K = 20
+BM25_WEIGHT = 1.0
+HUB_PENALTY_BETA = 0.1
+MIN_QUERY_TOKEN_LEN = 2
+MAX_QUERY_TOKENS = 24
 EXCLUDED_DIRS = {
     ".git",
     ".obsidian",
@@ -105,6 +114,14 @@ def resolve_index_file(custom_path: str = "", vault_path: str = "") -> str:
     vault = resolve_vault_path(vault_path)
     key = hashlib.sha1(vault.encode("utf-8")).hexdigest()[:12] if vault else "default"
     return os.path.join(data_dir(), "indexes", f"{key}.npz")
+
+
+def resolve_fts_file(index_file: str) -> str:
+    """SQLite FTS5 index that sits next to the npz vector index."""
+    base, ext = os.path.splitext(index_file)
+    if ext.lower() == ".npz":
+        return base + ".fts.sqlite"
+    return index_file + ".fts.sqlite"
 
 
 def resolve_cache_dir() -> str:
@@ -241,38 +258,112 @@ def clean_markdown(text: str) -> str:
     return text.strip()
 
 
+def extract_note_tags(raw: str) -> str:
+    """Collect tags/keywords from YAML frontmatter (list, inline list or string)."""
+    text = raw.lstrip("\ufeff")
+    if not text.startswith("---"):
+        return ""
+    end = text.find("\n---", 3)
+    if end == -1:
+        return ""
+    front = text[3:end]
+
+    key_re = re.compile(r"^(tags|keywords)\s*:\s*(.*)$", re.IGNORECASE)
+    tags: list[str] = []
+    collecting = False
+    for line in front.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = key_re.match(stripped)
+        if match:
+            collecting = True
+            value = match.group(2).strip()
+            if value and value.lower() not in ("null", "~", "none") and value != "[]":
+                if value.startswith("[") and value.endswith("]"):
+                    value = value[1:-1]
+                for part in re.split(r"[,\s]+", value):
+                    part = part.strip().strip("'\"")
+                    if part:
+                        tags.append(part)
+        elif collecting and stripped.startswith("-"):
+            item = stripped[1:].strip().strip("'\"")
+            if item:
+                tags.append(item)
+        elif collecting:
+            collecting = False
+
+    seen: set[str] = set()
+    unique = []
+    for tag in tags:
+        if tag not in seen:
+            seen.add(tag)
+            unique.append(tag)
+    return " ".join(unique)
+
+
+def note_title(rel_path: str) -> str:
+    name = os.path.basename(rel_path)
+    return name[:-3] if name.lower().endswith(".md") else name
+
+
 def split_note_into_chunks(title: str, content: str) -> list[dict]:
-    """Split a note by headings so long notes are searchable by section."""
-    sections: list[tuple[str, str]] = []
+    """Split a note by headings so long notes are searchable by section.
+
+    Each chunk keeps a breadcrumb — the chain of parent headings plus its own
+    heading ("H1 → H2 → H3") — which is embedded with the text and reused by
+    the FTS index.
+    """
+    sections: list[tuple[str, str, str]] = []  # (label, breadcrumb, body)
+    heading_stack: list[tuple[int, str]] = []
     current_title = ""
+    current_breadcrumb = ""
     current_lines: list[str] = []
 
+    def flush() -> None:
+        body = "\n".join(current_lines).strip()
+        if body:
+            sections.append((current_title, current_breadcrumb, body))
+
     for line in content.splitlines():
-        match = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        match = re.match(r"^(#{1,6})\s+(.+?)\s*$", line)
         if match:
-            body = "\n".join(current_lines).strip()
-            if body:
-                sections.append((current_title, body))
-            current_title = re.sub(r"\[\[(.*?)\]\]", r"\1", match.group(1))
-            current_title = re.sub(r"[*_`]", "", current_title).strip()
+            flush()
+            level = len(match.group(1))
+            heading = re.sub(r"\[\[(.*?)\]\]", r"\1", match.group(2))
+            heading = re.sub(r"[*_`]", "", heading).strip()
+            while heading_stack and heading_stack[-1][0] >= level:
+                heading_stack.pop()
+            heading_stack.append((level, heading))
+            current_title = heading
+            current_breadcrumb = " → ".join(text for _, text in heading_stack if text)
             current_lines = []
         else:
             current_lines.append(line)
-
-    body = "\n".join(current_lines).strip()
-    if body:
-        sections.append((current_title, body))
+    flush()
 
     chunks = []
-    for section_title, body in sections[:MAX_CHUNKS_PER_NOTE]:
+    for section_title, breadcrumb, body in sections[:MAX_CHUNKS_PER_NOTE]:
         label = section_title or "вступление"
-        text = f"passage: {title} — {label}\n{body[:SECTION_CHARS]}"
-        chunks.append({"section": label, "text": text})
+        snippet = body[:SECTION_CHARS]
+        if breadcrumb:
+            text = f"passage: {title} — {breadcrumb}\n{snippet}"
+        else:
+            text = f"passage: {title}\n{snippet}"
+        chunks.append({
+            "section": label,
+            "breadcrumb": breadcrumb,
+            "body": snippet,
+            "text": text,
+        })
 
     if not chunks:
+        snippet = content[:SNIPPET_CHARS] or title
         chunks.append({
             "section": "",
-            "text": f"passage: {title}\n{content[:SNIPPET_CHARS] or title}",
+            "breadcrumb": "",
+            "body": snippet,
+            "text": f"passage: {title}\n{snippet}",
         })
     return chunks
 
@@ -414,7 +505,150 @@ def load_index(index_file: str):
     mtimes = data["mtimes"].astype(np.int64) if "mtimes" in data else None
     sizes = data["sizes"].astype(np.int64) if "sizes" in data else None
     version = int(data["version"]) if "version" in data else 0
-    return files, vectors, sections, mtimes, sizes, version
+    breadcrumbs = (
+        [str(b) for b in data["breadcrumbs"]] if "breadcrumbs" in data else [""] * len(files)
+    )
+    tags = [str(t) for t in data["tags"]] if "tags" in data else [""] * len(files)
+    return files, vectors, sections, mtimes, sizes, version, breadcrumbs, tags
+
+
+def note_chunk_payload(rel_path: str, raw: str) -> dict:
+    """Tags + per-chunk section/breadcrumb/body used by the FTS index."""
+    tags = extract_note_tags(raw)
+    chunks = split_note_into_chunks(note_title(rel_path), clean_markdown(raw))
+    return {
+        "tags": tags,
+        "rows": [
+            {
+                "section": chunk["section"],
+                "breadcrumb": chunk["breadcrumb"],
+                "body": chunk["body"],
+            }
+            for chunk in chunks
+        ],
+    }
+
+
+def _read_note_payload(client: ObsidianClient, vault_path: str, rel_path: str) -> dict:
+    return note_chunk_payload(rel_path, read_note(client, vault_path, rel_path))
+
+
+def _fts_connect(fts_file: str) -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(os.path.abspath(fts_file)), exist_ok=True)
+    conn = sqlite3.connect(fts_file)
+    conn.execute(f'CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5('
+                 f'note, section, body, breadcrumb, tags, tokenize="{FTS_TOKENIZER}")')
+    conn.execute("CREATE TABLE IF NOT EXISTS fts_meta (key TEXT PRIMARY KEY, value TEXT)")
+    return conn
+
+
+def _fts_create_table(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS chunks_fts")
+    conn.execute(f'CREATE VIRTUAL TABLE chunks_fts USING fts5('
+                 f'note, section, body, breadcrumb, tags, tokenize="{FTS_TOKENIZER}")')
+    conn.execute("CREATE TABLE IF NOT EXISTS fts_meta (key TEXT PRIMARY KEY, value TEXT)")
+
+
+def _fts_meta_get(conn: sqlite3.Connection, key: str) -> str | None:
+    try:
+        row = conn.execute("SELECT value FROM fts_meta WHERE key = ?", (key,)).fetchone()
+    except sqlite3.Error:
+        return None
+    return str(row[0]) if row else None
+
+
+def _fts_meta_set(conn: sqlite3.Connection, key: str, value) -> None:
+    conn.execute(
+        "INSERT INTO fts_meta(key, value) VALUES(?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, str(value)),
+    )
+
+
+def _fts_ready(conn: sqlite3.Connection, expected_rows: int) -> bool:
+    """True when the FTS table matches this engine and holds `expected_rows`."""
+    try:
+        if _fts_meta_get(conn, "schema_version") != str(FTS_SCHEMA_VERSION):
+            return False
+        if _fts_meta_get(conn, "index_version") != str(INDEX_VERSION):
+            return False
+        columns = [row[1] for row in conn.execute("PRAGMA table_info(chunks_fts)")]
+        if columns[:5] != ["note", "section", "body", "breadcrumb", "tags"]:
+            return False
+        total = conn.execute("SELECT count(*) FROM chunks_fts").fetchone()[0]
+    except sqlite3.Error:
+        return False
+    return int(total) == expected_rows
+
+
+def _fts_insert_note(conn: sqlite3.Connection, note: str, payload: dict) -> None:
+    tags = payload.get("tags", "") or ""
+    rows = payload.get("rows") or []
+    conn.executemany(
+        "INSERT INTO chunks_fts(note, section, body, breadcrumb, tags) VALUES (?, ?, ?, ?, ?)",
+        [
+            (note, row.get("section", ""), row.get("body", ""), row.get("breadcrumb", ""), tags)
+            for row in rows
+        ],
+    )
+
+
+def _unique_notes(files: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered = []
+    for name in files:
+        if name not in seen:
+            seen.add(name)
+            ordered.append(name)
+    return ordered
+
+
+def sync_fts_index(
+    index_file: str,
+    files: list[str],
+    payloads: dict[str, dict],
+    changed_notes: set[str],
+    old_row_count: int,
+    full_rebuild: bool,
+    client: ObsidianClient,
+    vault_path: str = "",
+) -> str:
+    """Keep the SQLite FTS5 index next to the npz in sync with the chunks."""
+    fts_file = resolve_fts_file(index_file)
+    conn = _fts_connect(fts_file)
+    rebuild_reason = ""
+    try:
+        if full_rebuild or not _fts_ready(conn, old_row_count):
+            rebuild_reason = "full rebuild" if full_rebuild else "missing or outdated FTS index"
+            _fts_create_table(conn)
+            with conn:
+                for note in _unique_notes(files):
+                    payload = payloads.get(note) or _read_note_payload(client, vault_path, note)
+                    _fts_insert_note(conn, note, payload)
+        else:
+            with conn:
+                for note in sorted(changed_notes):
+                    conn.execute("DELETE FROM chunks_fts WHERE note = ?", (note,))
+                    payload = payloads.get(note)
+                    if payload is not None:
+                        _fts_insert_note(conn, note, payload)
+            total = conn.execute("SELECT count(*) FROM chunks_fts").fetchone()[0]
+            if int(total) != len(files):
+                rebuild_reason = "row count mismatch with npz index"
+                _fts_create_table(conn)
+                with conn:
+                    for note in _unique_notes(files):
+                        payload = payloads.get(note) or _read_note_payload(client, vault_path, note)
+                        _fts_insert_note(conn, note, payload)
+        with conn:
+            _fts_meta_set(conn, "schema_version", FTS_SCHEMA_VERSION)
+            _fts_meta_set(conn, "index_version", INDEX_VERSION)
+            _fts_meta_set(conn, "rows", len(files))
+    finally:
+        conn.close()
+    if rebuild_reason:
+        sys.stderr.write(f"[INFO] FTS index rebuilt ({rebuild_reason}) -> {fts_file}\n")
+    return fts_file
 
 
 def build_or_update_index(
@@ -424,7 +658,7 @@ def build_or_update_index(
     vault_path: str = "",
     force: bool = False,
 ):
-    """Build or incrementally update the vector index."""
+    """Build or incrementally update the vector index (and the FTS5 index)."""
     started = time.time()
     if vault_path:
         entries = scan_vault(vault_path)
@@ -440,15 +674,26 @@ def build_or_update_index(
 
     cached_vectors: dict[str, list[np.ndarray]] = {}
     cached_sections: dict[str, list[str]] = {}
+    cached_breadcrumbs: dict[str, list[str]] = {}
+    cached_tags: dict[str, str] = {}
     cached_meta: dict[str, tuple[int, int]] = {}
+    full_rebuild = True
+    old_row_count = 0
 
     if not force and os.path.exists(index_file):
         try:
-            old_files, old_vectors, old_sections_arr, old_mtimes, old_sizes, old_version = load_index(index_file)
+            (
+                old_files, old_vectors, old_sections_arr, old_mtimes, old_sizes,
+                old_version, old_breadcrumbs, old_tags,
+            ) = load_index(index_file)
             if old_version == INDEX_VERSION and old_vectors.shape[1] == embedder.embedding_dim:
+                full_rebuild = False
+                old_row_count = len(old_files)
                 for i, name in enumerate(old_files):
                     cached_vectors.setdefault(name, []).append(old_vectors[i])
                     cached_sections.setdefault(name, []).append(old_sections_arr[i])
+                    cached_breadcrumbs.setdefault(name, []).append(old_breadcrumbs[i])
+                    cached_tags.setdefault(name, old_tags[i])
                     if name not in cached_meta:
                         cached_meta[name] = (
                             int(old_mtimes[i]) if old_mtimes is not None else -1,
@@ -465,10 +710,15 @@ def build_or_update_index(
     files: list[str] = []
     vectors: list[np.ndarray] = []
     sections: list[str] = []
+    breadcrumbs: list[str] = []
+    tags_column: list[str] = []
     mtimes: list[int] = []
     sizes: list[int] = []
     embedded_notes = 0
     embedded_chunks = 0
+    payloads: dict[str, dict] = {}
+    changed_notes: set[str] = set()
+    live_paths = {entry["path"] for entry in entries}
 
     for number, entry in enumerate(entries, start=1):
         rel_path = entry["path"]
@@ -488,13 +738,28 @@ def build_or_update_index(
         if unchanged:
             chunk_vectors = cached
             chunk_sections = cached_sections[rel_path]
+            chunk_breadcrumbs = cached_breadcrumbs.get(rel_path) or [""] * len(cached)
+            note_tags = cached_tags.get(rel_path, "")
         else:
             raw = read_note(client, vault_path, rel_path)
-            title = os.path.basename(rel_path)[:-3] if rel_path.lower().endswith(".md") else os.path.basename(rel_path)
             content = clean_markdown(raw)
-            chunks = split_note_into_chunks(title, content)
+            note_tags = extract_note_tags(raw)
+            chunks = split_note_into_chunks(note_title(rel_path), content)
             chunk_vectors = [embedder.embed_text(chunk["text"]) for chunk in chunks]
             chunk_sections = [chunk["section"] for chunk in chunks]
+            chunk_breadcrumbs = [chunk["breadcrumb"] for chunk in chunks]
+            payloads[rel_path] = {
+                "tags": note_tags,
+                "rows": [
+                    {
+                        "section": chunk["section"],
+                        "breadcrumb": chunk["breadcrumb"],
+                        "body": chunk["body"],
+                    }
+                    for chunk in chunks
+                ],
+            }
+            changed_notes.add(rel_path)
             embedded_notes += 1
             embedded_chunks += len(chunks)
             if embedded_notes == 1 or embedded_notes % 10 == 0:
@@ -503,12 +768,19 @@ def build_or_update_index(
                     f"on {embedder.device} ({number}/{len(entries)})\n"
                 )
 
-        for vector, section in zip(chunk_vectors, chunk_sections):
+        for i, (vector, section) in enumerate(zip(chunk_vectors, chunk_sections)):
             files.append(rel_path)
             vectors.append(vector)
             sections.append(section)
+            breadcrumbs.append(
+                chunk_breadcrumbs[i] if i < len(chunk_breadcrumbs) else ""
+            )
+            tags_column.append(note_tags)
             mtimes.append(int(mtime) if mtime is not None else -1)
             sizes.append(int(size) if size is not None else -1)
+
+    # Notes removed from the vault must disappear from the FTS index as well.
+    changed_notes.update(set(cached_vectors) - live_paths)
 
     vectors_arr = np.array(vectors, dtype=np.float32)
     os.makedirs(os.path.dirname(os.path.abspath(index_file)), exist_ok=True)
@@ -517,6 +789,8 @@ def build_or_update_index(
         files=np.array(files),
         vectors=vectors_arr,
         sections=np.array(sections),
+        breadcrumbs=np.array(breadcrumbs),
+        tags=np.array(tags_column),
         mtimes=np.array(mtimes, dtype=np.int64),
         sizes=np.array(sizes, dtype=np.int64),
         version=np.array(INDEX_VERSION, dtype=np.int64),
@@ -527,12 +801,27 @@ def build_or_update_index(
         f"{embedded_notes} notes re-embedded, shape {vectors_arr.shape}, "
         f"{elapsed:.1f}s -> {index_file}\n"
     )
+    try:
+        sync_fts_index(
+            index_file,
+            files,
+            payloads,
+            changed_notes,
+            old_row_count,
+            full_rebuild,
+            client,
+            vault_path,
+        )
+    except Exception as exc:
+        sys.stderr.write(f"[WARNING] FTS index update failed: {exc}\n")
     return (
         files,
         vectors_arr,
         np.array(sections),
         np.array(mtimes, dtype=np.int64),
         np.array(sizes, dtype=np.int64),
+        np.array(breadcrumbs),
+        np.array(tags_column),
     )
 
 
@@ -572,6 +861,105 @@ def get_moc_referenced_notes(client: ObsidianClient, vault_path: str = "") -> se
     return set(match.split("|")[0].strip() for match in re.findall(r"\[\[(.*?)\]\]", content))
 
 
+def query_tokens(text: str) -> list[str]:
+    """Query tokens for BM25 / boost: lowercase, len >= 2, deduped, max 24."""
+    seen: set[str] = set()
+    tokens: list[str] = []
+    for word in re.findall(r"[\wа-яё]+", (text or "").lower()):
+        if len(word) < MIN_QUERY_TOKEN_LEN or word in seen:
+            continue
+        seen.add(word)
+        tokens.append(word)
+        if len(tokens) >= MAX_QUERY_TOKENS:
+            break
+    return tokens
+
+
+def build_fts_match(tokens: list[str]) -> str:
+    """FTS5 MATCH expression: prefix matching with OR between query tokens."""
+    parts = []
+    for token in tokens:
+        escaped = token.replace('"', '""')
+        parts.append(f'"{escaped}"*')
+    return " OR ".join(parts)
+
+
+def _fts_open_readonly(fts_file: str) -> sqlite3.Connection | None:
+    if not os.path.isfile(fts_file):
+        return None
+    try:
+        return sqlite3.connect(f"file:{fts_file}?mode=ro", uri=True)
+    except sqlite3.Error:
+        return None
+
+
+def query_fts_hits(fts_file: str, tokens: list[str]) -> list[tuple[int, str, str, float]]:
+    """BM25 hits ordered best-first: (rowid, note, section, bm25 score)."""
+    match = build_fts_match(tokens)
+    if not match:
+        return []
+    conn = _fts_open_readonly(fts_file)
+    if conn is None:
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT rowid, note, section, bm25(chunks_fts) AS s "
+            "FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY s ASC",
+            (match,),
+        ).fetchall()
+    except sqlite3.Error:
+        return []
+    finally:
+        conn.close()
+    return [(int(row[0]), str(row[1]), str(row[2]), float(row[3])) for row in rows]
+
+
+def fts_chunk_ordinals(fts_file: str, notes: set[str]) -> dict[int, int]:
+    """rowid -> position of the chunk inside its note (FTS insert order)."""
+    if not notes:
+        return {}
+    conn = _fts_open_readonly(fts_file)
+    if conn is None:
+        return {}
+    note_list = sorted(notes)
+    placeholders = ",".join("?" * len(note_list))
+    try:
+        rows = conn.execute(
+            f"SELECT rowid, note FROM chunks_fts WHERE note IN ({placeholders}) "
+            f"ORDER BY note, rowid",
+            note_list,
+        ).fetchall()
+    except sqlite3.Error:
+        return {}
+    finally:
+        conn.close()
+    ordinals: dict[int, int] = {}
+    counters: dict[str, int] = {}
+    for rowid, note in rows:
+        position = counters.get(str(note), 0)
+        ordinals[int(rowid)] = position
+        counters[str(note)] = position + 1
+    return ordinals
+
+
+def boost_coefficient(tokens: list[str], section: str, rel_path: str, tags: str) -> float:
+    """Title/heading/tags boost (1.0 .. 2.0)."""
+    if not tokens:
+        return 1.0
+    section_text = (section or "").lower()
+    file_text = (rel_path or "").lower()
+    tag_text = (tags or "").lower()
+
+    def ratio(haystack: str) -> float:
+        if not haystack:
+            return 0.0
+        hits = sum(1 for token in tokens if token in haystack)
+        return hits / len(tokens)
+
+    boost = 1.0 + 0.6 * ratio(section_text) + 0.6 * ratio(file_text) + 0.2 * ratio(tag_text)
+    return min(boost, 2.0)
+
+
 def search_vault(
     query: str,
     top_k: int = 5,
@@ -596,7 +984,7 @@ def search_vault(
 
     if not rebuild_needed:
         try:
-            files, vectors, sections, mtimes, sizes, version = load_index(index_path)
+            files, vectors, sections, mtimes, sizes, version, breadcrumbs, tags = load_index(index_path)
             if vectors.shape[1] != expected_dim or version != INDEX_VERSION:
                 rebuild_needed = True
         except Exception:
@@ -609,7 +997,7 @@ def search_vault(
         )
         if not index_data:
             return []
-        files, vectors, sections, mtimes, sizes = index_data
+        files, vectors, sections, mtimes, sizes, breadcrumbs, tags = index_data
         version = INDEX_VERSION
     else:
         try:
@@ -622,7 +1010,7 @@ def search_vault(
                     client, embedder, index_file=index_path, vault_path=vault_path, force=False
                 )
                 if index_data:
-                    files, vectors, sections, mtimes, sizes = index_data
+                    files, vectors, sections, mtimes, sizes, breadcrumbs, tags = index_data
         except Exception as exc:
             sys.stderr.write(f"[WARNING] Index auto-sync failed: {exc}\n")
 
@@ -655,31 +1043,77 @@ def search_vault(
     if not candidate_indices:
         return []
 
+    tokens = query_tokens(query)
     query_started = time.time()
     query_vec = embedder.embed_text(f"query: {query.strip()}")
     infer_time = time.time() - query_started
 
     candidate_vectors = vectors[candidate_indices]
     candidate_scores = np.dot(candidate_vectors, query_vec)
+    dense_score_by_idx = {
+        int(idx): float(candidate_scores[pos]) for pos, idx in enumerate(candidate_indices)
+    }
 
-    # A note may have many chunks: keep only its best matching chunk.
-    best: dict[str, tuple[float, int]] = {}
-    for idx, score in zip(candidate_indices, candidate_scores):
+    # Full dense ranking of the candidate chunks (1-based ranks).
+    dense_rank: dict[int, int] = {}
+    for rank, pos in enumerate(np.argsort(-candidate_scores), start=1):
+        dense_rank[int(candidate_indices[int(pos)])] = rank
+
+    # BM25 ranking over the FTS index (1-based ranks among matching chunks).
+    candidate_set = set(candidate_indices)
+    note_indices: dict[str, list[int]] = {}
+    for idx, name in enumerate(files):
+        note_indices.setdefault(name, []).append(idx)
+
+    fts_path = resolve_fts_file(index_path)
+    bm25_hits = query_fts_hits(fts_path, tokens) if tokens else []
+    bm25_rank: dict[int, int] = {}
+    if bm25_hits:
+        ordinals = fts_chunk_ordinals(fts_path, {hit[1] for hit in bm25_hits})
+        for rank, (rowid, note, _section, _score) in enumerate(bm25_hits, start=1):
+            idxs = note_indices.get(note)
+            if not idxs:
+                continue
+            position = ordinals.get(rowid, 0)
+            if position >= len(idxs):
+                continue
+            idx = idxs[position]
+            if idx not in candidate_set or idx in bm25_rank:
+                continue
+            bm25_rank[idx] = rank
+
+    # Reciprocal rank fusion of dense and BM25 rankings.
+    fused: dict[str, tuple[float, int]] = {}
+    for idx in candidate_indices:
+        idx = int(idx)
+        fused_score = 1.0 / (RRF_K + dense_rank.get(idx, len(files) + 1))
+        if idx in bm25_rank:
+            fused_score += BM25_WEIGHT / (RRF_K + bm25_rank[idx])
         name = files[idx]
-        previous = best.get(name)
-        if previous is None or score > previous[0]:
-            best[name] = (float(score), idx)
+        previous = fused.get(name)
+        if previous is None or fused_score > previous[0]:
+            fused[name] = (fused_score, idx)
 
-    ranked = sorted(best.items(), key=lambda item: item[1][0], reverse=True)[:top_k]
+    ranked = []
+    for name, (fused_score, idx) in fused.items():
+        boost = boost_coefficient(tokens, sections[idx], name, tags[idx])
+        n_chunks = len(note_indices.get(name, (idx,)))
+        hub_penalty = 1.0 + HUB_PENALTY_BETA * math.log2(1 + n_chunks)
+        ranked.append((fused_score * boost / hub_penalty, fused_score, idx, name))
+    ranked.sort(key=lambda item: item[0], reverse=True)
+    ranked = ranked[:top_k]
 
     total_ms = round((time.time() - started) * 1000, 1)
     results = []
-    for rank, (name, (score, idx)) in enumerate(ranked):
+    for rank, (final_score, _fused_score, idx, name) in enumerate(ranked):
         results.append({
             "rank": rank + 1,
             "filename": name,
             "section": sections[idx],
-            "score": float(round(score, 4)),
+            "score": float(round(final_score, 4)),
+            "dense_score": float(round(dense_score_by_idx.get(idx, 0.0), 4)),
+            "bm25_rank": bm25_rank.get(idx),
+            "breadcrumb": breadcrumbs[idx] if idx < len(breadcrumbs) else "",
             "device": embedder.device,
             "infer_time_ms": round(infer_time * 1000, 2),
             "load_time_ms": embedder.load_time_ms,
@@ -725,10 +1159,12 @@ def check_environment(args) -> dict:
         info["tokenizers_error"] = str(exc)
 
     try:
-        files, vectors, _, _, _, _ = load_index(info["index_file"])
+        files, vectors, _, _, _, _, _, _ = load_index(info["index_file"])
         info["index_notes"] = len(set(files))
         info["index_chunks"] = len(files)
         info["index_dim"] = int(vectors.shape[1])
+        info["fts_file"] = resolve_fts_file(info["index_file"])
+        info["fts_ok"] = os.path.isfile(info["fts_file"])
     except Exception:
         pass
 
