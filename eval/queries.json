@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "description": "Eval-набор запросов для оценки качества семантического поиска. Ожидаемые ответы определены по СОДЕРЖИМОМУ заметок vault /home/direkt/Документы/learn (не по текущей выдаче поиска).",
+  "queries": [
+    {
+      "query": "pacman CacheServer общий кэш пакетов между ноутбуками",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Общий кэш пакетов (CacheServer)"],
+      "category": "exact_term"
+    },
+    {
+      "query": "wake-on-lan MAC адреса для пробуждения серверов",
+      "expected_files": ["dev/Infrastructure/Proxmox/mac adress for wol.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "sshd hardening PermitRootLogin PasswordAuthentication вход по ключу",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["SSH"],
+      "category": "exact_term"
+    },
+    {
+      "query": "syncthing device ID порт 22000 allowedNetworks",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Syncthing"],
+      "category": "exact_term"
+    },
+    {
+      "query": "systemd tuned-adm profile server-powersave отключить кастомный сервис",
+      "expected_files": ["dev/Infrastructure/Proxmox/профиль енергосбережения.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "tailscale exit node acl.json tag:router проброс трафика консоли",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "hashcat -m 22000 airodump-ng handshake wifi",
+      "expected_files": ["dev/Programming/Linux/hash_cat.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "v4l2-ctl gphoto2 ffmpeg фотоаппарат как веб-камера",
+      "expected_files": ["dev/Programming/Linux/live usb cam.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "ansible автоматизация proxmox LXC управление серверами по ssh",
+      "expected_files": ["dev/Programming/Ansible/Ansible - Автоматизация Homelab.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "headscale config.yaml trusted_proxies node.expiry миграция версии",
+      "expected_files": ["dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"],
+      "expected_sections": [],
+      "category": "exact_term"
+    },
+    {
+      "query": "как заставить ноутбук не спать при закрытой крышке на зарядке",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Питание, крышка и сон"],
+      "category": "semantic"
+    },
+    {
+      "query": "как играть в онлайн-игры на консоли через мобильный интернет с туннелем домой",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "как чтобы второй ноутбук качал пакеты из кэша первого а не с зеркал",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Общий кэш пакетов (CacheServer)"],
+      "category": "semantic"
+    },
+    {
+      "query": "как направить dns-запросы роутера через pi-hole в vpn-сети",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "как использовать планшет как беспроводной второй монитор для ноутбука",
+      "expected_files": ["dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "как переключить встроенную графику intel meteor lake на драйвер xe вместо i915",
+      "expected_files": ["dev/redmibook pro 14/Включение драйвера Xe для Intel.md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "как получить доступ к домашней сети из публичного wifi где провайдер режет туннели по sni",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "как собрать домашний nas с nextcloud transmission и jellyfin в lxc-контейнерах",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md"],
+      "expected_sections": [],
+      "category": "semantic"
+    },
+    {
+      "query": "не просыпается при подключении зарядки",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Состояние сна"],
+      "category": "casual"
+    },
+    {
+      "query": "фото не синкаются между ноутбуками",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Syncthing для фото (LAN-only)"],
+      "category": "casual"
+    },
+    {
+      "query": "ноутбук думает что на зарядке хотя зарядка не подключена",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Фантомный USB-C и guard"],
+      "category": "casual"
+    },
+    {
+      "query": "сколько ватт жрет сервер в простое",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+        "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+        "dev/Infrastructure/Proxmox/профиль енергосбережения.md"
+      ],
+      "expected_sections": [],
+      "category": "casual"
+    },
+    {
+      "query": "после перезагрузки дашборд выдает 403",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md"],
+      "expected_sections": [],
+      "category": "casual"
+    },
+    {
+      "query": "какой пароль на прошивке uefi",
+      "expected_files": [
+        "dev/Programming/uefi pass.md",
+        "dev/redmibook pro 14/uefi pass.md"
+      ],
+      "expected_sections": [],
+      "category": "casual"
+    },
+    {
+      "query": "как показать скрытые файлы в проводнике kde",
+      "expected_files": ["dev/Programming/Linux/KDE.md"],
+      "expected_sections": [],
+      "category": "casual"
+    },
+    {
+      "query": "thinkpad x270",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+        "dev/Infrastructure/My IT Infrastructure & Devices.md"
+      ],
+      "expected_sections": [],
+      "category": "device_name"
+    },
+    {
+      "query": "redmibook pro 14",
+      "expected_files": [
+        "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+        "dev/redmibook pro 14/Включение драйвера Xe для Intel.md",
+        "dev/redmibook pro 14/uefi pass.md"
+      ],
+      "expected_sections": [],
+      "category": "device_name"
+    },
+    {
+      "query": "proxmox alfa базовый конфиг",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/Базовый конфиг.md",
+        "dev/Infrastructure/My IT Infrastructure & Devices.md"
+      ],
+      "expected_sections": [],
+      "category": "device_name"
+    },
+    {
+      "query": "m5stack cardputer персональный ассистент",
+      "expected_files": ["dev/Projects/ESP32/cardputer-ai/форк закртоого проект на кардпуетерп (персональный аи аситистнет).md"],
+      "expected_sections": [],
+      "category": "device_name"
+    },
+    {
+      "query": "gl-mt3000 travel router",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+        "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+        "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"
+      ],
+      "expected_sections": [],
+      "category": "device_name"
+    },
+    {
+      "query": "traefik видит ip 172.18.0.1 docker шлюз вместо реального адреса клиента",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md"],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "nintendo switch nat type f не работает онлайн-игра",
+      "expected_files": ["dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "headscale контейнер падает с ошибкой FATAL после обновления",
+      "expected_files": ["dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "pacman зависает и ждет таймаут при обновлении",
+      "expected_files": ["dev/Infrastructure/ThinkPad X270 — Arch Linux.md"],
+      "expected_sections": ["Общий кэш пакетов (CacheServer)"],
+      "category": "error_symptom"
+    },
+    {
+      "query": "tailscale p2p-соединения идут через derp-релеи вместо прямых",
+      "expected_files": [
+        "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+        "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md"
+      ],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "yay кэш занял кучу места на диске",
+      "expected_files": ["dev/Projects/AI/Local AI/Сессии/2026-10-06_Глубокое_исследование_компиляции_Gemma_4_26B_и_лимитов_драйвера_Intel_Arc.md"],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "устройства вылетают из vpn-сети раз в полгода",
+      "expected_files": ["dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"],
+      "expected_sections": [],
+      "category": "error_symptom"
+    },
+    {
+      "query": "Akkusativ und Dativ wann welcher Fall",
+      "expected_files": [
+        "Deutsch/Grammatik/Akkusativ.md",
+        "Deutsch/Grammatik/Dativ.md",
+        "Deutsch/Grammatik/Pronomen_Kasus.md"
+      ],
+      "expected_sections": [],
+      "category": "deutsch"
+    },
+    {
+      "query": "wie bestimmt man das Geschlecht eines deutschen Wortes nach der Endung",
+      "expected_files": ["Deutsch/Grammatik/Artikelregeln.md"],
+      "expected_sections": [],
+      "category": "deutsch"
+    },
+    {
+      "query": "W-Fragen Wortstellung wo steht das Verb",
+      "expected_files": ["Deutsch/Grammatik/W-Fragen.md"],
+      "expected_sections": [],
+      "category": "deutsch"
+    }
+  ]
+}
