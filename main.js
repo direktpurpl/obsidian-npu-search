@@ -494,10 +494,13 @@ class NPUSearchModal extends Modal {
             const pathParts = item.filename.split('/');
             const dir = pathParts.length > 1 ? pathParts.slice(0, -1).join(' / ') : '';
             const pathEl = info.createDiv({ cls: 'npu-result-path' });
+            const section = item.section ? ` · ${item.section}` : '';
             if (dir) {
-                pathEl.innerHTML = `<span class="npu-folder-icon">📁</span> <span>${dir}</span>`;
+                pathEl.innerHTML = '<span class="npu-folder-icon">📁</span> ';
+                pathEl.createSpan({ text: `${dir}${section}` });
             } else {
-                pathEl.innerHTML = `<span class="npu-folder-icon">📄</span> <span>${item.filename}</span>`;
+                pathEl.innerHTML = '<span class="npu-folder-icon">📄</span> ';
+                pathEl.createSpan({ text: `${item.filename}${section}` });
             }
 
             const meta = card.createDiv({ cls: 'npu-result-meta' });

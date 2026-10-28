@@ -38,7 +38,10 @@ DEFAULT_REST_URL = os.environ.get("OBSIDIAN_REST_URL", "http://127.0.0.1:27123")
 INDEX_NAME = "vault_embeddings.npz"
 MODEL_NAME = "Multilingual-E5-Base"
 SNIPPET_CHARS = 1200
+SECTION_CHARS = 1000
+MAX_CHUNKS_PER_NOTE = 40
 MAX_SEQ_LEN = 512
+INDEX_VERSION = 3
 EXCLUDED_DIRS = {
     ".git",
     ".obsidian",
@@ -235,6 +238,42 @@ def clean_markdown(text: str) -> str:
     return text.strip()
 
 
+def split_note_into_chunks(title: str, content: str) -> list[dict]:
+    """Split a note by headings so long notes are searchable by section."""
+    sections: list[tuple[str, str]] = []
+    current_title = ""
+    current_lines: list[str] = []
+
+    for line in content.splitlines():
+        match = re.match(r"^#{1,6}\s+(.+?)\s*$", line)
+        if match:
+            body = "\n".join(current_lines).strip()
+            if body:
+                sections.append((current_title, body))
+            current_title = re.sub(r"\[\[(.*?)\]\]", r"\1", match.group(1))
+            current_title = re.sub(r"[*_`]", "", current_title).strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    body = "\n".join(current_lines).strip()
+    if body:
+        sections.append((current_title, body))
+
+    chunks = []
+    for section_title, body in sections[:MAX_CHUNKS_PER_NOTE]:
+        label = section_title or "вступление"
+        text = f"passage: {title} — {label}\n{body[:SECTION_CHARS]}"
+        chunks.append({"section": label, "text": text})
+
+    if not chunks:
+        chunks.append({
+            "section": "",
+            "text": f"passage: {title}\n{content[:SNIPPET_CHARS] or title}",
+        })
+    return chunks
+
+
 class Embedder:
     """OpenVINO inference with automatic NPU -> GPU -> CPU fallback."""
 
@@ -368,9 +407,11 @@ def load_index(index_file: str):
     data = np.load(index_file, allow_pickle=True)
     files = [str(f) for f in data["files"]]
     vectors = data["vectors"].astype(np.float32)
+    sections = [str(s) for s in data["sections"]] if "sections" in data else [""] * len(files)
     mtimes = data["mtimes"].astype(np.int64) if "mtimes" in data else None
     sizes = data["sizes"].astype(np.int64) if "sizes" in data else None
-    return files, vectors, mtimes, sizes
+    version = int(data["version"]) if "version" in data else 0
+    return files, vectors, sections, mtimes, sizes, version
 
 
 def build_or_update_index(
@@ -394,61 +435,77 @@ def build_or_update_index(
         sys.stderr.write("[ERROR] No markdown files found.\n")
         return None
 
-    cached: dict[str, tuple[np.ndarray, int | None, int | None]] = {}
+    cached_vectors: dict[str, list[np.ndarray]] = {}
+    cached_sections: dict[str, list[str]] = {}
+    cached_meta: dict[str, tuple[int, int]] = {}
+
     if not force and os.path.exists(index_file):
         try:
-            old_files, old_vectors, old_mtimes, old_sizes = load_index(index_file)
-            if old_vectors.shape[1] == embedder.embedding_dim:
+            old_files, old_vectors, old_sections_arr, old_mtimes, old_sizes, old_version = load_index(index_file)
+            if old_version == INDEX_VERSION and old_vectors.shape[1] == embedder.embedding_dim:
                 for i, name in enumerate(old_files):
-                    cached[name] = (
-                        old_vectors[i],
-                        int(old_mtimes[i]) if old_mtimes is not None else None,
-                        int(old_sizes[i]) if old_sizes is not None else None,
-                    )
-                sys.stderr.write(f"[INFO] Loaded {len(cached)} cached embeddings.\n")
+                    cached_vectors.setdefault(name, []).append(old_vectors[i])
+                    cached_sections.setdefault(name, []).append(old_sections_arr[i])
+                    if name not in cached_meta:
+                        cached_meta[name] = (
+                            int(old_mtimes[i]) if old_mtimes is not None else -1,
+                            int(old_sizes[i]) if old_sizes is not None else -1,
+                        )
+                sys.stderr.write(f"[INFO] Loaded {len(cached_vectors)} cached notes.\n")
+            elif old_version != INDEX_VERSION:
+                sys.stderr.write(
+                    f"[INFO] Index format {old_version} -> {INDEX_VERSION}, rebuilding.\n"
+                )
         except Exception as exc:
             sys.stderr.write(f"[INFO] Index cache ignored: {exc}\n")
 
     files: list[str] = []
     vectors: list[np.ndarray] = []
+    sections: list[str] = []
     mtimes: list[int] = []
     sizes: list[int] = []
-    embedded = 0
+    embedded_notes = 0
+    embedded_chunks = 0
 
     for number, entry in enumerate(entries, start=1):
         rel_path = entry["path"]
         mtime = entry["mtime_ns"]
         size = entry["size"]
 
-        cached_item = cached.get(rel_path)
+        cached = cached_vectors.get(rel_path)
         unchanged = False
-        if cached_item is not None:
-            cached_vector, cached_mtime, cached_size = cached_item
-            # If either side has no mtime (old index / REST mode), keep the vector.
-            if cached_mtime is None or mtime is None:
+        if cached is not None:
+            cached_mtime, cached_size = cached_meta.get(rel_path, (-1, -1))
+            # If either side has no mtime (old index / REST mode), keep the vectors.
+            if cached_mtime < 0 or mtime is None:
                 unchanged = True
             elif cached_mtime == mtime and cached_size == size:
                 unchanged = True
 
         if unchanged:
-            vector = cached_item[0]
+            chunk_vectors = cached
+            chunk_sections = cached_sections[rel_path]
         else:
             raw = read_note(client, vault_path, rel_path)
             title = os.path.basename(rel_path)[:-3] if rel_path.lower().endswith(".md") else os.path.basename(rel_path)
             content = clean_markdown(raw)
-            snippet = content[:SNIPPET_CHARS] if content else title
-            vector = embedder.embed_text(f"passage: {title}\n{snippet}")
-            embedded += 1
-            if embedded == 1 or embedded % 25 == 0:
+            chunks = split_note_into_chunks(title, content)
+            chunk_vectors = [embedder.embed_text(chunk["text"]) for chunk in chunks]
+            chunk_sections = [chunk["section"] for chunk in chunks]
+            embedded_notes += 1
+            embedded_chunks += len(chunks)
+            if embedded_notes == 1 or embedded_notes % 10 == 0:
                 sys.stderr.write(
-                    f"[INFO] Embedded {embedded} note(s) on {embedder.device} "
-                    f"({number}/{len(entries)})\n"
+                    f"[INFO] Embedded {embedded_notes} notes / {embedded_chunks} chunks "
+                    f"on {embedder.device} ({number}/{len(entries)})\n"
                 )
 
-        files.append(rel_path)
-        vectors.append(vector)
-        mtimes.append(int(mtime) if mtime is not None else -1)
-        sizes.append(int(size) if size is not None else -1)
+        for vector, section in zip(chunk_vectors, chunk_sections):
+            files.append(rel_path)
+            vectors.append(vector)
+            sections.append(section)
+            mtimes.append(int(mtime) if mtime is not None else -1)
+            sizes.append(int(size) if size is not None else -1)
 
     vectors_arr = np.array(vectors, dtype=np.float32)
     os.makedirs(os.path.dirname(os.path.abspath(index_file)), exist_ok=True)
@@ -456,15 +513,24 @@ def build_or_update_index(
         index_file,
         files=np.array(files),
         vectors=vectors_arr,
+        sections=np.array(sections),
         mtimes=np.array(mtimes, dtype=np.int64),
         sizes=np.array(sizes, dtype=np.int64),
+        version=np.array(INDEX_VERSION, dtype=np.int64),
     )
     elapsed = time.time() - started
     sys.stderr.write(
-        f"[INFO] Index saved: {len(files)} notes, {embedded} embedded, "
-        f"shape {vectors_arr.shape}, {elapsed:.1f}s -> {index_file}\n"
+        f"[INFO] Index saved: {len(set(files))} notes / {len(files)} chunks, "
+        f"{embedded_notes} notes re-embedded, shape {vectors_arr.shape}, "
+        f"{elapsed:.1f}s -> {index_file}\n"
     )
-    return files, vectors_arr, np.array(mtimes, dtype=np.int64), np.array(sizes, dtype=np.int64)
+    return (
+        files,
+        vectors_arr,
+        np.array(sections),
+        np.array(mtimes, dtype=np.int64),
+        np.array(sizes, dtype=np.int64),
+    )
 
 
 def index_needs_update(
@@ -527,8 +593,8 @@ def search_vault(
 
     if not rebuild_needed:
         try:
-            files, vectors, mtimes, sizes = load_index(index_path)
-            if vectors.shape[1] != expected_dim:
+            files, vectors, sections, mtimes, sizes, version = load_index(index_path)
+            if vectors.shape[1] != expected_dim or version != INDEX_VERSION:
                 rebuild_needed = True
         except Exception:
             rebuild_needed = True
@@ -540,7 +606,8 @@ def search_vault(
         )
         if not index_data:
             return []
-        files, vectors, mtimes, sizes = index_data
+        files, vectors, sections, mtimes, sizes = index_data
+        version = INDEX_VERSION
     else:
         try:
             if auto_sync and index_needs_update(
@@ -552,7 +619,7 @@ def search_vault(
                     client, embedder, index_file=index_path, vault_path=vault_path, force=False
                 )
                 if index_data:
-                    files, vectors, mtimes, sizes = index_data
+                    files, vectors, sections, mtimes, sizes = index_data
         except Exception as exc:
             sys.stderr.write(f"[WARNING] Index auto-sync failed: {exc}\n")
 
@@ -592,17 +659,24 @@ def search_vault(
     candidate_vectors = vectors[candidate_indices]
     candidate_scores = np.dot(candidate_vectors, query_vec)
 
-    top_k_sub = min(top_k, len(candidate_indices))
-    top_sub_indices = np.argsort(candidate_scores)[::-1][:top_k_sub]
+    # A note may have many chunks: keep only its best matching chunk.
+    best: dict[str, tuple[float, int]] = {}
+    for idx, score in zip(candidate_indices, candidate_scores):
+        name = files[idx]
+        previous = best.get(name)
+        if previous is None or score > previous[0]:
+            best[name] = (float(score), idx)
+
+    ranked = sorted(best.items(), key=lambda item: item[1][0], reverse=True)[:top_k]
 
     total_ms = round((time.time() - started) * 1000, 1)
     results = []
-    for rank, sub_idx in enumerate(top_sub_indices):
-        orig_idx = candidate_indices[sub_idx]
+    for rank, (name, (score, idx)) in enumerate(ranked):
         results.append({
             "rank": rank + 1,
-            "filename": str(files[orig_idx]),
-            "score": float(round(float(candidate_scores[sub_idx]), 4)),
+            "filename": name,
+            "section": sections[idx],
+            "score": float(round(score, 4)),
             "device": embedder.device,
             "infer_time_ms": round(infer_time * 1000, 2),
             "load_time_ms": embedder.load_time_ms,
@@ -625,6 +699,7 @@ def check_environment(args) -> dict:
         "selected_device": None,
         "model_ok": False,
         "index_notes": 0,
+        "index_chunks": 0,
         "index_dim": 0,
     }
     model_dir = info["model_dir"]
@@ -647,8 +722,9 @@ def check_environment(args) -> dict:
         info["tokenizers_error"] = str(exc)
 
     try:
-        files, vectors, _, _ = load_index(info["index_file"])
-        info["index_notes"] = len(files)
+        files, vectors, _, _, _, _ = load_index(info["index_file"])
+        info["index_notes"] = len(set(files))
+        info["index_chunks"] = len(files)
         info["index_dim"] = int(vectors.shape[1])
     except Exception:
         pass
