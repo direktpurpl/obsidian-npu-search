@@ -1,0 +1,3 @@
+numpy>=1.24
+openvino>=2024.0
+tokenizers>=0.15

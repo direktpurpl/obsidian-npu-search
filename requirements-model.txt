@@ -1,0 +1,3 @@
+# Only needed to export the model from HuggingFace for the first time.
+# Any existing OpenVINO IR copy of multilingual-e5-base also works.
+optimum-intel[openvino]>=1.18

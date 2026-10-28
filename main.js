@@ -1,28 +1,114 @@
-const { Plugin, Modal, Notice } = require('obsidian');
+const { Plugin, Modal, Notice, PluginSettingTab, Setting } = require('obsidian');
 const { execFile } = require('child_process');
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
 
-const PYTHON_BIN = "/home/direkt/Seafile/sync/projekts/Puthon/local_ai/.venv/bin/python";
+const DEFAULT_SETTINGS = {
+    pythonPath: '',
+    modelDir: '',
+    device: 'auto',
+    restUrl: 'http://127.0.0.1:27123',
+    indexFile: '',
+    topK: 10
+};
 
-function getScriptPath(app) {
+function expandHome(value) {
+    if (!value) return value;
+    if (value === '~') return os.homedir();
+    if (value.startsWith('~/') || value.startsWith('~\\')) {
+        return path.join(os.homedir(), value.slice(2));
+    }
+    return value;
+}
+
+function getPluginDir(app, plugin) {
     try {
         const vaultPath = app.vault.adapter.getBasePath ? app.vault.adapter.getBasePath() : '';
+        const manifestDir = plugin && plugin.manifest ? plugin.manifest.dir : '';
+        if (manifestDir) {
+            if (path.isAbsolute(manifestDir)) return manifestDir;
+            if (vaultPath) return path.join(vaultPath, manifestDir);
+        }
         if (vaultPath) {
-            const pluginScript = path.join(vaultPath, '.obsidian', 'plugins', 'npu-search', 'scripts', 'npu_vault_search.py');
-            if (fs.existsSync(pluginScript)) {
-                return pluginScript;
-            }
+            const configDir = app.vault.configDir || '.obsidian';
+            return path.join(vaultPath, configDir, 'plugins', 'npu-search');
         }
     } catch (e) {}
+    return __dirname;
+}
 
-    const fallback = "/home/direkt/Seafile/sync/projekts/Puthon/local_ai/scripts/npu_vault_search.py";
-    return fallback;
+function getScriptPath(app, plugin) {
+    return path.join(getPluginDir(app, plugin), 'scripts', 'npu_vault_search.py');
+}
+
+function getDataDir() {
+    const xdg = (process.env.XDG_DATA_HOME || '').trim();
+    const base = xdg || path.join(os.homedir(), '.local', 'share');
+    return path.join(base, 'npu-search');
+}
+
+function getPythonPath(app, plugin) {
+    const settings = (plugin && plugin.settings) || DEFAULT_SETTINGS;
+    if (settings.pythonPath) return expandHome(settings.pythonPath);
+
+    const pluginDir = getPluginDir(app, plugin);
+    const dataDir = getDataDir();
+    const candidates = process.platform === 'win32'
+        ? [
+            path.join(pluginDir, '.venv', 'Scripts', 'python.exe'),
+            path.join(dataDir, 'venv', 'Scripts', 'python.exe')
+        ]
+        : [
+            path.join(pluginDir, '.venv', 'bin', 'python'),
+            path.join(dataDir, 'venv', 'bin', 'python')
+        ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) return candidate;
+    }
+    return process.platform === 'win32' ? 'python' : 'python3';
+}
+
+function getRuntimeArgs(app, plugin) {
+    const settings = (plugin && plugin.settings) || DEFAULT_SETTINGS;
+    const args = [
+        '--device', settings.device || 'auto',
+        '--rest-url', settings.restUrl || DEFAULT_SETTINGS.restUrl
+    ];
+    if (settings.modelDir) args.push('--model-dir', expandHome(settings.modelDir));
+    if (settings.indexFile) args.push('--index-file', expandHome(settings.indexFile));
+
+    try {
+        const vaultPath = app.vault.adapter.getBasePath ? app.vault.adapter.getBasePath() : '';
+        if (vaultPath) args.push('--vault-path', vaultPath);
+    } catch (e) {}
+    return args;
+}
+
+function runPython(app, plugin, extraArgs, callback) {
+    const python = getPythonPath(app, plugin);
+    const script = getScriptPath(app, plugin);
+    if (!fs.existsSync(script)) {
+        callback(new Error(`Не найден скрипт: ${script}`), '', '');
+        return;
+    }
+    execFile(
+        python,
+        [script, ...extraArgs],
+        { maxBuffer: 8 * 1024 * 1024, env: { ...process.env, PYTHONUNBUFFERED: '1' } },
+        callback
+    );
+}
+
+function pythonErrorText(error, stderr) {
+    const tail = (stderr || '').trim().split('\n').slice(-6).join('\n');
+    return tail ? `${error.message}\n${tail}` : error.message;
 }
 
 class NPUSearchModal extends Modal {
-    constructor(app) {
+    constructor(app, plugin) {
         super(app);
+        this.plugin = plugin;
         this.results = [];
         this.selectedIndex = -1;
         this.lastSearchedQuery = '';
@@ -167,16 +253,15 @@ class NPUSearchModal extends Modal {
                 cls: 'npu-loading-text' 
             });
 
-            const scriptPath = getScriptPath(this.app);
             const args = [
-                scriptPath, 
-                '--query', query, 
-                '--json', 
-                '--top-k', '10',
-                '--filter', this.currentFilter
+                '--query', query,
+                '--json',
+                '--top-k', String(this.plugin.settings.topK || 10),
+                '--filter', this.currentFilter,
+                ...getRuntimeArgs(this.app, this.plugin)
             ];
 
-            execFile(PYTHON_BIN, args, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+            runPython(this.app, this.plugin, args, (error, stdout, stderr) => {
                 this.isSearching = false;
                 searchBtn.disabled = false;
                 searchBtn.removeClass('loading');
@@ -184,9 +269,10 @@ class NPUSearchModal extends Modal {
                 loading.remove();
 
                 if (error) {
-                    new Notice('❌ Ошибка NPU: ' + error.message);
+                    const detail = pythonErrorText(error, stderr);
+                    new Notice('❌ Ошибка NPU: ' + detail, 10000);
                     const errEl = resultsEl.createDiv({ cls: 'npu-empty-state error' });
-                    errEl.setText('Ошибка выполнения поиска: ' + error.message);
+                    errEl.setText('Ошибка выполнения поиска: ' + detail);
                     return;
                 }
 
@@ -475,13 +561,100 @@ class NPUSearchModal extends Modal {
     }
 }
 
+class NPUSearchSettingTab extends PluginSettingTab {
+    constructor(app, plugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    display() {
+        const { containerEl } = this;
+        containerEl.empty();
+        containerEl.createEl('h2', { text: 'Семантический NPU-поиск' });
+
+        new Setting(containerEl)
+            .setName('Python')
+            .setDesc('Путь к интерпретатору. Пусто — автоопределение: venv в папке плагина, ~/.local/share/npu-search/venv, затем python3.')
+            .addText(text => text
+                .setPlaceholder('/usr/bin/python3')
+                .setValue(this.plugin.settings.pythonPath)
+                .onChange(async value => {
+                    this.plugin.settings.pythonPath = value.trim();
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Модель')
+            .setDesc('Папка Multilingual-E5-Base с tokenizer.json и openvino/openvino_model.xml. Пусто — ~/.local/share/npu-search/models.')
+            .addText(text => text
+                .setPlaceholder('~/.local/share/npu-search/models/Multilingual-E5-Base')
+                .setValue(this.plugin.settings.modelDir)
+                .onChange(async value => {
+                    this.plugin.settings.modelDir = value.trim();
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Устройство')
+            .setDesc('Авто: NPU → GPU → CPU. На X270 без NPU автоматически будет CPU.')
+            .addDropdown(dropdown => dropdown
+                .addOption('auto', 'Авто (NPU → GPU → CPU)')
+                .addOption('NPU', 'Intel NPU')
+                .addOption('GPU', 'Intel GPU')
+                .addOption('CPU', 'CPU')
+                .setValue(this.plugin.settings.device)
+                .onChange(async value => {
+                    this.plugin.settings.device = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Obsidian REST API')
+            .setDesc('Используется только если заметки не читаются напрямую с диска.')
+            .addText(text => text
+                .setPlaceholder('http://127.0.0.1:27123')
+                .setValue(this.plugin.settings.restUrl)
+                .onChange(async value => {
+                    this.plugin.settings.restUrl = value.trim() || DEFAULT_SETTINGS.restUrl;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Результатов в выдаче')
+            .addSlider(slider => slider
+                .setLimits(3, 30, 1)
+                .setValue(this.plugin.settings.topK)
+                .setDynamicTooltip()
+                .onChange(async value => {
+                    this.plugin.settings.topK = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Окружение')
+            .setDesc('Проверить Python, OpenVINO, модель, устройство и индекс.')
+            .addButton(button => button
+                .setButtonText('Проверить')
+                .onClick(() => this.plugin.checkEnvironment()));
+
+        new Setting(containerEl)
+            .setName('Индекс')
+            .setDesc('Полностью пересобрать векторный индекс заметок.')
+            .addButton(button => button
+                .setButtonText('Пересобрать')
+                .onClick(() => this.plugin.rebuildIndex()));
+    }
+}
+
 module.exports = class NPUSearchPlugin extends Plugin {
     async onload() {
         console.log('[NPU Search] Загрузка плагина NPU Semantic Search');
+        await this.loadSettings();
+        this.addSettingTab(new NPUSearchSettingTab(this.app, this));
 
         // Иконка в ленте слева (Ribbon)
         this.addRibbonIcon('brain', 'Семантический NPU-поиск', () => {
-            new NPUSearchModal(this.app).open();
+            new NPUSearchModal(this.app, this).open();
         });
 
         // Команда быстрого поиска (Ctrl+P)
@@ -489,7 +662,7 @@ module.exports = class NPUSearchPlugin extends Plugin {
             id: 'npu-semantic-search',
             name: 'Семантический поиск по смыслу (NPU)',
             callback: () => {
-                new NPUSearchModal(this.app).open();
+                new NPUSearchModal(this.app, this).open();
             }
         });
 
@@ -497,17 +670,58 @@ module.exports = class NPUSearchPlugin extends Plugin {
         this.addCommand({
             id: 'npu-rebuild-index',
             name: 'Пересобрать векторный NPU-индекс заметок',
-            callback: () => {
-                new Notice('⚡ Пересборка векторного индекса на Intel NPU...');
-                const scriptPath = getScriptPath(this.app);
-                execFile(PYTHON_BIN, [scriptPath, '--build-index'], (error, stdout, stderr) => {
-                    if (error) {
-                        new Notice('❌ Ошибка пересборки: ' + error.message, 5000);
-                    } else {
-                        new Notice('✅ Векторный индекс NPU успешно обновлен!', 4000);
-                    }
-                });
+            callback: () => this.rebuildIndex()
+        });
+    }
+
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
+    }
+
+    runPython(args, callback) {
+        return runPython(this.app, this, args, callback);
+    }
+
+    checkEnvironment() {
+        new Notice('🔎 Проверка окружения NPU...');
+        const args = ['--check', ...getRuntimeArgs(this.app, this)];
+        this.runPython(args, (error, stdout, stderr) => {
+            if (error) {
+                new Notice('❌ Проверка не удалась: ' + pythonErrorText(error, stderr), 10000);
+                return;
             }
+            try {
+                const info = JSON.parse(stdout);
+                const parts = [
+                    `Python: ${info.python}`,
+                    `OpenVINO: ${info.openvino || 'нет'}`,
+                    `Устройства: ${(info.devices || []).join(', ') || 'нет'}`,
+                    `Выбрано: ${info.selected_device || 'не проверено'}`,
+                    `Модель: ${info.model_ok ? 'OK' : 'НЕ НАЙДЕНА'}`,
+                    `Индекс: ${info.index_notes} заметок`
+                ];
+                new Notice('🧠 ' + parts.join('\n'), 12000);
+                console.log('[NPU Search] environment:', info);
+            } catch (e) {
+                new Notice('⚠️ Не удалось разобрать ответ проверки: ' + stdout, 10000);
+            }
+        });
+    }
+
+    rebuildIndex() {
+        new Notice('⚡ Пересборка векторного индекса...');
+        const args = ['--build-index', ...getRuntimeArgs(this.app, this)];
+        this.runPython(args, (error, stdout, stderr) => {
+            if (error) {
+                new Notice('❌ Ошибка пересборки: ' + pythonErrorText(error, stderr), 10000);
+                return;
+            }
+            console.log('[NPU Search] rebuild:', stderr);
+            new Notice('✅ Векторный индекс обновлён!', 5000);
         });
     }
 

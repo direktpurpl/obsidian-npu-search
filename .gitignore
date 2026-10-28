@@ -4,4 +4,9 @@ node_modules/
 *.npz
 model_cache/
 models/
+.cache/
+.venv/
+venv/
 __pycache__/
+*.pyc
+data.json
