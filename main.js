@@ -43,6 +43,8 @@ function getScriptPath(app, plugin) {
 }
 
 function getDataDir() {
+    const custom = (process.env.NPU_DATA_DIR || '').trim();
+    if (custom) return expandHome(custom);
     const xdg = (process.env.XDG_DATA_HOME || '').trim();
     const base = xdg || path.join(os.homedir(), '.local', 'share');
     return path.join(base, 'npu-search');

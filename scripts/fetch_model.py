@@ -24,6 +24,9 @@ MODEL_NAME = "Multilingual-E5-Base"
 
 
 def data_dir() -> str:
+    custom = os.environ.get("NPU_DATA_DIR", "")
+    if custom:
+        return os.path.expanduser(custom)
     base = os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share"))
     return os.path.join(base, "npu-search")
 
