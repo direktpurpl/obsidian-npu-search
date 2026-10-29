@@ -101,8 +101,8 @@ rsync -a --info=progress2 \
 
 `Obsidian → Settings → Community plugins → Intel NPU Semantic Search`.
 
-Поиск: иконка 🧠 слева, хоткеи `Ctrl+Alt+F` (поиск), `Ctrl+Alt+D` и `F12`
-(сразу фильтр Deutsch — словарь и грамматика; на ThinkPad X270 это клавиша ★).
+Поиск: иконка 🧠 слева, хоткеи `Ctrl+Alt+F` (поиск), `Ctrl+Alt+D`
+и ★-клавиша на ThinkPad (сразу фильтр Deutsch — словарь и грамматика).
 Все хоткеи работают при любой раскладке и переназначаются в
 Настройки → Горячие клавиши. Или `Ctrl+P` → «Семантический поиск по смыслу (NPU)».
 

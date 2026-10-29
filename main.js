@@ -675,8 +675,9 @@ module.exports = class NPUSearchPlugin extends Plugin {
         // Хоткей Ctrl+Alt+F по физической клавише (event.code) —
         // работает при любой раскладке (клавиша F даёт 'а' в русской раскладке,
         // поэтому сверка по key: 'f' не срабатывает).
-        // Ctrl+Alt+D, F12 и ★-клавиша ThinkPad (KEY_BOOKMARKS) — фильтр Deutsch.
-        const starKeyNames = ['Favorites', 'BrowserFavorites', 'XF86Favorites', 'Bookmarks'];
+        // Ctrl+Alt+D и ★-клавиша ThinkPad (KEY_BOOKMARKS) — фильтр Deutsch.
+        const starKeyNames = ['Favorites', 'BrowserFavorites', 'XF86Favorites', 'Bookmarks',
+            'LaunchAssistant'];
         this.registerDomEvent(document, 'keydown', (event) => {
             if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey) {
                 if (event.code === 'KeyF') {
@@ -690,7 +691,7 @@ module.exports = class NPUSearchPlugin extends Plugin {
             }
             const isStarKey = starKeyNames.includes(event.code) || starKeyNames.includes(event.key);
             if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
-                && (event.code === 'F12' || isStarKey)) {
+                && isStarKey) {
                 event.preventDefault();
                 this.openSearch('deutsch');
                 return;
@@ -708,7 +709,6 @@ module.exports = class NPUSearchPlugin extends Plugin {
             name: 'Семантический поиск по немецкому (Deutsch)',
             hotkeys: [
                 { modifiers: ['Mod', 'Alt'], key: 'd' },
-                { modifiers: [], key: 'F12' },
             ],
             callback: () => {
                 this.openSearch('deutsch');
