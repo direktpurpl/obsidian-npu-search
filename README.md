@@ -26,7 +26,10 @@
 - Obsidian Desktop (плагин использует Node.js `child_process`).
 - Python **3.10+**.
 - Python-пакеты: `openvino`, `tokenizers`, `numpy` (ставятся через `scripts/setup.sh`).
-- Модель `Multilingual-E5-Base` в формате OpenVINO IR (≈1.1 ГБ).
+- Модель `Multilingual-E5-Base` в формате OpenVINO IR. Автоматически
+  предпочитается INT8-версия (≈288 МБ, квантование NNCF weight-only);
+  FP-версия (≈1.1 ГБ) используется как fallback. Квантование —
+  `scripts/quantize_int8.py`.
 - Для NPU: Meteor Lake / Lunar Lake и драйвер `intel_vpu`; для GPU — Intel GPU;
   CPU работает всегда.
 
@@ -163,48 +166,72 @@ $PY $SCRIPT --query "backup" --device CPU
 ├── styles.css
 ├── requirements.txt
 ├── requirements-model.txt
+├── eval/
+│   ├── queries.json                       # eval-набор из 40 запросов
+│   └── results/                           # замеры метрик (JSON)
 └── scripts/
     ├── npu_vault_search.py                # движок поиска
+    ├── quantize_int8.py                   # квантование модели (NNCF)
+    ├── eval_search.py                     # оценка качества: Recall@k, MRR
     ├── fetch_model.py                     # копирование/экспорт модели
     └── setup.sh                           # venv + зависимости
 
 ~/.local/share/npu-search/                 # runtime, вне git
 ├── venv/
-├── models/Multilingual-E5-Base/
-├── indexes/<hash-vault>.npz
+├── models/Multilingual-E5-Base/           # FP-модель (fallback)
+├── models/Multilingual-E5-Base-INT8/      # INT8 (288 МБ, используется по умолчанию)
+├── indexes/<hash-vault>.npz               # векторный индекс
+├── indexes/<hash-vault>.fts.sqlite        # BM25-индекс (FTS5)
 └── cache/openvino/
 ```
 
 Индекс привязан к пути vault (хэш), поэтому несколько хранилищ не конфликтуют.
-Файлы `models/`, `venv/`, `.cache/` и `*.npz` не попадают в git.
+Файлы `models/`, `venv/`, `.cache/`, `*.npz` и `*.fts.sqlite` не попадают в git.
+
+INT8-модель можно получить квантованием FP:
+
+```bash
+~/.local/share/npu-search/venv/bin/python scripts/quantize_int8.py --mode weight-only
+```
+
+Оценка качества (40 запросов, Recall@1/3/5, MRR):
+
+```bash
+~/.local/share/npu-search/venv/bin/python scripts/eval_search.py   --queries eval/queries.json --out eval/results/my.json   --vault-path /path/to/vault --label my --device auto --runs 3
+```
 
 ---
 
 ## 🚀 Производительность
 
-Замеры на main (Core Ultra, NPU) и X270 (i5-6300U, CPU, AVX2).
+Замеры на main (Core Ultra 7 155H, NPU) и X270 (i5-6300U, CPU, AVX2).
 Индекс — 207 заметок / ~1050 секций:
 
 | Операция | NPU (main) | CPU (X270) |
 | :-- | --: | --: |
+| Полный поиск (запрос + выдача) | ~0.8 с | ~1.2 с |
+| Загрузка модели на запрос | ~0.6–0.8 с | ~1.1 с |
 | Эмбеддинг запроса | ~130 мс | ~90 мс |
-| Загрузка модели на запрос | ~0.9 с | ~1.3–1.6 с |
-| Полный поиск (запрос + выдача) | ~1.1 с | ~1.5–2.2 с |
-| Полная индексация | ~63 с | ~4–5 мин |
+| Полная индексация (INT8, батчи) | ~90 с | ~10 мин |
 | Инкрементальное обновление | секунды | десятки секунд |
 
+Замеры на INT8-модели (2026-10-29); качество по eval-набору из 40 запросов:
+R@1 0.88–0.90, R@3/R@5 1.0, MRR 0.93–0.94.
+
 Поиск запускает отдельный процесс Python (zero idle RAM): модель грузится на
-время запроса и выгружается. Если нужен мгновенный отклик, следующий шаг —
-фоновый демон (см. roadmap проекта).
+время запроса и выгружается. Изменённые заметки переиндексируются в фоне —
+поиск не ждёт пересборку.
 
 ---
 
 ## 🧩 Как это работает
 
 1. Плагин вызывает `npu_vault_search.py` с `--query` и `--json`.
-2. Скрипт загружает эмбеддинги заметок из `.npz` (или строит индекс).
+2. Скрипт загружает векторный индекс `.npz` и keyword-индекс `.fts.sqlite`.
 3. Запрос кодируется моделью `multilingual-e5-base` (`query: ...`).
-4. Считается косинусное сходство, результаты возвращаются в UI.
+4. Dense-выдача (косинусное сходство) и BM25-выдача (SQLite FTS5) сливаются
+   через RRF; совпадения с заголовком/путём/тегами дают буст, крупные
+   «хабовые» заметки штрафуются. Результаты возвращаются в UI.
 
 Заметка режется на секции по заголовкам; каждая секция индексируется отдельно
 (до 40 секций на заметку). Поэтому поиск находит нужный раздел даже в длинной
