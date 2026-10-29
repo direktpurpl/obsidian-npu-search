@@ -659,7 +659,7 @@ module.exports = class NPUSearchPlugin extends Plugin {
 
         // Иконка в ленте слева (Ribbon)
         this.addRibbonIcon('brain', 'Семантический NPU-поиск', () => {
-            new NPUSearchModal(this.app, this).open();
+            this.openSearch();
         });
 
         // Команда быстрого поиска (Ctrl+P)
@@ -668,7 +668,18 @@ module.exports = class NPUSearchPlugin extends Plugin {
             name: 'Семантический поиск по смыслу (NPU)',
             hotkeys: [{ modifiers: ['Mod', 'Alt'], key: 'f' }],
             callback: () => {
-                new NPUSearchModal(this.app, this).open();
+                this.openSearch();
+            }
+        });
+
+        // Хоткей Ctrl+Alt+F по физической клавише (event.code) —
+        // работает при любой раскладке (клавиша F даёт 'а' в русской раскладке,
+        // поэтому сверка по key: 'f' не срабатывает).
+        this.registerDomEvent(document, 'keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey
+                && event.code === 'KeyF') {
+                event.preventDefault();
+                this.openSearch();
             }
         });
 
@@ -678,6 +689,18 @@ module.exports = class NPUSearchPlugin extends Plugin {
             name: 'Пересобрать векторный NPU-индекс заметок',
             callback: () => this.rebuildIndex()
         });
+    }
+
+    openSearch() {
+        if (this.activeSearchModal) return;
+        const modal = new NPUSearchModal(this.app, this);
+        this.activeSearchModal = modal;
+        const originalOnClose = modal.onClose.bind(modal);
+        modal.onClose = () => {
+            this.activeSearchModal = null;
+            originalOnClose();
+        };
+        modal.open();
     }
 
     async loadSettings() {
