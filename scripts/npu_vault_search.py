@@ -93,9 +93,12 @@ def resolve_model_dir(custom_path: str = "") -> str:
     if env_path:
         candidates.append(os.path.expanduser(env_path))
 
-    default = os.path.join(data_dir(), "models", MODEL_NAME)
+    # Prefer the quantized INT8 build when present: same quality, ~4x smaller
+    # and noticeably faster single-query latency on CPU.
     candidates.extend([
-        default,
+        os.path.join(data_dir(), "models", f"{MODEL_NAME}-INT8"),
+        os.path.join(PLUGIN_DIR, "models", f"{MODEL_NAME}-INT8"),
+        os.path.join(data_dir(), "models", MODEL_NAME),
         os.path.join(PLUGIN_DIR, "models", MODEL_NAME),
     ])
 
@@ -396,12 +399,15 @@ class Embedder:
 
         available = self.available_devices
         candidates = []
+        # NPU first: main runs stay on the NPU so the CPU is not heated up.
+        # GPU and CPU stay as fallbacks when the NPU is unavailable.
         for preferred in ("NPU", "GPU", "CPU"):
+            if preferred == "CPU":
+                candidates.append("CPU")
+                continue
             matches = [d for d in available if d.upper() == preferred or d.upper().startswith(preferred + ".")]
             if matches:
                 candidates.extend(matches)
-            elif preferred == "CPU":
-                candidates.append("CPU")
         return candidates or ["CPU"]
 
     def _load_model(self) -> None:

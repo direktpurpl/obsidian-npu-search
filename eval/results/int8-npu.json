@@ -1,0 +1,2282 @@
+{
+  "label": "int8-npu",
+  "timestamp": "2026-10-29T01:10:30+01:00",
+  "engine": "/home/direkt/Seafile/sync/projekts/Puthon/obsidian-npu-search/scripts/npu_vault_search.py",
+  "queries_file": "/home/direkt/Seafile/sync/projekts/Puthon/obsidian-npu-search/eval/queries.json",
+  "vault_path": "/home/direkt/Документы/learn",
+  "config": {
+    "top_k": 5,
+    "device_requested": "auto",
+    "model_dir": "(engine default)",
+    "runs_per_query": 3
+  },
+  "device_used": [
+    "NPU"
+  ],
+  "metrics": {
+    "queries": 40,
+    "recall_at_1": 0.875,
+    "recall_at_3": 1.0,
+    "recall_at_5": 1.0,
+    "mrr": 0.9291666666666666,
+    "latency_ms": {
+      "avg": 816.83,
+      "p50": 802.95,
+      "p95": 885.47,
+      "min": 790.2,
+      "max": 912.7
+    },
+    "section_match_rate": 0.6666666666666666,
+    "section_match_applicable": 9
+  },
+  "metrics_by_category": {
+    "casual": {
+      "queries": 7,
+      "recall_at_1": 0.8571428571428571,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9285714285714286,
+      "latency_ms": {
+        "avg": 806.6428571428571,
+        "p50": 804.4,
+        "p95": 822.8100000000001,
+        "min": 794.6,
+        "max": 823.2
+      },
+      "section_match_rate": 0.6666666666666666,
+      "section_match_applicable": 3
+    },
+    "deutsch": {
+      "queries": 3,
+      "recall_at_1": 0.3333333333333333,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.5555555555555555,
+      "latency_ms": {
+        "avg": 843.4666666666667,
+        "p50": 832.7,
+        "p95": 867.98,
+        "min": 825.8,
+        "max": 871.9
+      },
+      "section_match_rate": null,
+      "section_match_applicable": 0
+    },
+    "device_name": {
+      "queries": 5,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "latency_ms": {
+        "avg": 801.6800000000001,
+        "p50": 802.1,
+        "p95": 815.04,
+        "min": 790.2,
+        "max": 818.1
+      },
+      "section_match_rate": null,
+      "section_match_applicable": 0
+    },
+    "error_symptom": {
+      "queries": 7,
+      "recall_at_1": 0.8571428571428571,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9285714285714286,
+      "latency_ms": {
+        "avg": 863.2142857142857,
+        "p50": 882.0,
+        "p95": 908.9200000000001,
+        "min": 797.5,
+        "max": 912.7
+      },
+      "section_match_rate": 1.0,
+      "section_match_applicable": 1
+    },
+    "exact_term": {
+      "queries": 10,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "latency_ms": {
+        "avg": 801.8399999999999,
+        "p50": 800.4,
+        "p95": 815.83,
+        "min": 793.2,
+        "max": 817.0
+      },
+      "section_match_rate": 1.0,
+      "section_match_applicable": 3
+    },
+    "semantic": {
+      "queries": 8,
+      "recall_at_1": 0.875,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "mrr": 0.9375,
+      "latency_ms": {
+        "avg": 803.375,
+        "p50": 801.55,
+        "p95": 817.415,
+        "min": 793.4,
+        "max": 818.5
+      },
+      "section_match_rate": 0.0,
+      "section_match_applicable": 2
+    }
+  },
+  "per_query": [
+    {
+      "query": "pacman CacheServer общий кэш пакетов между ноутбуками",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Общий кэш пакетов (CacheServer)"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": true,
+      "total_ms_median": 814.4,
+      "total_ms_runs": [
+        1014.1,
+        788.3,
+        814.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "📦 Общий кэш пакетов (CacheServer)",
+          "score": 0.0839
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/Infrastructure/Свой репозиторий Arch Linux/Свой репозиторий Arch Linux (Идея).md",
+          "section": "2. Клиентская настройка (/etc/pacman.conf на ноутбуке):",
+          "score": 0.0572
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Руководство.md",
+          "section": "Кэш префикса — почему повторный ход стал секундным",
+          "score": 0.0486
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Оптимизация_проекта_и_кэшей.md",
+          "section": "📌 Следующие шаги (Next Steps)",
+          "score": 0.0418
+        },
+        {
+          "rank": 5,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Основная документация",
+          "score": 0.039
+        }
+      ]
+    },
+    {
+      "query": "wake-on-lan MAC адреса для пробуждения серверов",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/mac adress for wol.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 817.0,
+      "total_ms_runs": [
+        815.3,
+        831.4,
+        817.0
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Proxmox/mac adress for wol.md",
+          "section": "вступление",
+          "score": 0.0789
+        },
+        {
+          "rank": 2,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Proxmox",
+          "score": 0.0624
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Обслуживание/Аудит безопасности инфраструктуры (тестирование себя).md",
+          "section": "полный по всем портам (для одного адреса за раз, -T2 чтобы не пугать хостера)",
+          "score": 0.0486
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "Добавляем адреса наших Pi-hole из сети Headscale",
+          "score": 0.0454
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Словарь/machen.md",
+          "section": "",
+          "score": 0.0402
+        }
+      ]
+    },
+    {
+      "query": "sshd hardening PermitRootLogin PasswordAuthentication вход по ключу",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "SSH"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": true,
+      "total_ms_median": 803.7,
+      "total_ms_runs": [
+        809.5,
+        797.3,
+        803.7
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "SSH",
+          "score": 0.0575
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Обслуживание/Централизованный сбор логов и мониторинг безопасности.md",
+          "section": "✅ Рекомендуемый минимум под мою топологию",
+          "score": 0.0514
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/ESP32/esp32-wifi-penetration-tool/esp32-wifi-penetration-tool.md",
+          "section": "Модульная структура репозитория",
+          "score": 0.0483
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/Руководство.md",
+          "section": "Кэш префикса — почему повторный ход стал секундным",
+          "score": 0.0426
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "🔄 Синхронизация конфигов Homepage",
+          "score": 0.0425
+        }
+      ]
+    },
+    {
+      "query": "syncthing device ID порт 22000 allowedNetworks",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Syncthing"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": true,
+      "total_ms_median": 802.1,
+      "total_ms_runs": [
+        834.8,
+        802.1,
+        792.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Syncthing для фото (LAN-only)",
+          "score": 0.0687
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🔗 Интеграция устройств",
+          "score": 0.0597
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Programming/Linux/hash_cat.md",
+          "section": "вступление",
+          "score": 0.0581
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/ESP32/esp32-wifi-penetration-tool/esp32-wifi-penetration-tool.md",
+          "section": "⚠️ Уроки и особенности разработки (Knowledge Base)",
+          "score": 0.0451
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Пробрасываем порты из туннеля (от сервера) прямо на IP Nintendo Switch",
+          "score": 0.0385
+        }
+      ]
+    },
+    {
+      "query": "systemd tuned-adm profile server-powersave отключить кастомный сервис",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/профиль енергосбережения.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 796.4,
+      "total_ms_runs": [
+        790.0,
+        796.4,
+        806.6
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Proxmox/профиль енергосбережения.md",
+          "section": "вступление",
+          "score": 0.0866
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+          "section": "вступление",
+          "score": 0.0862
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+          "section": "разово переключить в powersave:",
+          "score": 0.0529
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Programming/Docker/docker arch.md",
+          "section": "вступление",
+          "score": 0.0499
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "Диск: что занимает и как чистить",
+          "score": 0.0455
+        }
+      ]
+    },
+    {
+      "query": "tailscale exit node acl.json tag:router проброс трафика консоли",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 793.2,
+      "total_ms_runs": [
+        798.2,
+        793.2,
+        775.7
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "🛠️ Шаг 1: Правила Headscale (acl.json)",
+          "score": 0.0789
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "4. Настройка ACL на сервере Headscale",
+          "score": 0.0661
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "✅ Осталось руками",
+          "score": 0.0529
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "4. Docker-шлюз (сейчас — на Oracle, Франкфурт)",
+          "score": 0.0494
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0494
+        }
+      ]
+    },
+    {
+      "query": "hashcat -m 22000 airodump-ng handshake wifi",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Programming/Linux/hash_cat.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 794.1,
+      "total_ms_runs": [
+        790.4,
+        794.1,
+        794.1
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Programming/Linux/hash_cat.md",
+          "section": "вступление",
+          "score": 0.0932
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/ESP32/esp32-wifi-penetration-tool/esp32-wifi-penetration-tool.md",
+          "section": "🗺️ Дорожная карта (Roadmap)",
+          "score": 0.0622
+        },
+        {
+          "rank": 3,
+          "filename": "dev/🗺️ Карта проектов (MOC).md",
+          "section": "esp32-wifi-penetration-tool|ESP32 Wi-Fi Penetration Tool",
+          "score": 0.0472
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Firewall",
+          "score": 0.0365
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Словарь/die E-Mail-Adresse.md",
+          "section": "",
+          "score": 0.035
+        }
+      ]
+    },
+    {
+      "query": "v4l2-ctl gphoto2 ffmpeg фотоаппарат как веб-камера",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Programming/Linux/live usb cam.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 796.7,
+      "total_ms_runs": [
+        796.7,
+        784.7,
+        803.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Programming/Linux/live usb cam.md",
+          "section": "вступление",
+          "score": 0.0822
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "📷 Фототехника",
+          "score": 0.045
+        },
+        {
+          "rank": 3,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "Настройка в веб-интерфейсе Sunshine",
+          "score": 0.0428
+        },
+        {
+          "rank": 4,
+          "filename": "dev/книги/Список книг.md",
+          "section": "Специализированные области",
+          "score": 0.0392
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/Security/CVE-2017-7921/CVE-2017-7921.md",
+          "section": "⚠️ Уроки и особенности разработки (Knowledge Base)",
+          "score": 0.0384
+        }
+      ]
+    },
+    {
+      "query": "ansible автоматизация proxmox LXC управление серверами по ssh",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Programming/Ansible/Ansible - Автоматизация Homelab.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 802.0,
+      "total_ms_runs": [
+        802.0,
+        804.1,
+        778.2
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Programming/Ansible/Ansible - Автоматизация Homelab.md",
+          "section": "Запустить контейнер",
+          "score": 0.0698
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md",
+          "section": "1. Подготовка дискового пространства (Хост Proxmox)",
+          "score": 0.042
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "Обнаружено дополнительно",
+          "score": 0.0383
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "⚙️ Автоматизация обслуживания",
+          "score": 0.0351
+        },
+        {
+          "rank": 5,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "🏷 Быстрый доступ по тегам",
+          "score": 0.031
+        }
+      ]
+    },
+    {
+      "query": "headscale config.yaml trusted_proxies node.expiry миграция версии",
+      "category": "exact_term",
+      "expected_files": [
+        "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 798.8,
+      "total_ms_runs": [
+        780.9,
+        832.4,
+        798.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0966
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/DevOps/headscale-cli/headscale-cli.md",
+          "section": "⚠️ Уроки и особенности разработки (Knowledge Base)",
+          "score": 0.067
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/DevOps/homepage-config/homepage-config.md",
+          "section": "Структура репозитория",
+          "score": 0.065
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Решение",
+          "score": 0.0423
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "🛠️ Шаг 1: Правила Headscale (acl.json)",
+          "score": 0.0394
+        }
+      ]
+    },
+    {
+      "query": "как заставить ноутбук не спать при закрытой крышке на зарядке",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Питание, крышка и сон"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": false,
+      "total_ms_median": 818.5,
+      "total_ms_runs": [
+        819.3,
+        818.5,
+        801.7
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Фантомный USB-C и guard",
+          "score": 0.0625
+        },
+        {
+          "rank": 2,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "1. modedeskprep.sh (Команда подготовки / Do Command)",
+          "score": 0.0473
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/ESP32/cardputer-ai/форк закртоого проект на кардпуетерп (персональный аи аситистнет).md",
+          "section": "📌 Описание и назначение",
+          "score": 0.044
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+          "section": "вступление",
+          "score": 0.0419
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "⚠️ Отдельные находки (не связаны с туннелем)",
+          "score": 0.0377
+        }
+      ]
+    },
+    {
+      "query": "как играть в онлайн-игры на консоли через мобильный интернет с туннелем домой",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 802.7,
+      "total_ms_runs": [
+        802.7,
+        796.0,
+        813.0
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Настройка NAT Type B для Nintendo Switch через Tailscale (GL.iNet + LXC + MikroTik)",
+          "score": 0.0814
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Proxmox/Базовый конфиг.md",
+          "section": "вступление",
+          "score": 0.0628
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "⚠️ Отдельные находки (не связаны с туннелем)",
+          "score": 0.0569
+        },
+        {
+          "rank": 4,
+          "filename": "README.md",
+          "section": "Chameleon Ultra",
+          "score": 0.0347
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Аудит безопасности инфраструктуры (тестирование себя).md",
+          "section": "🧨 Правила игры (Rules of Engagement)",
+          "score": 0.0339
+        }
+      ]
+    },
+    {
+      "query": "как чтобы второй ноутбук качал пакеты из кэша первого а не с зеркал",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Общий кэш пакетов (CacheServer)"
+      ],
+      "hit_rank": 2,
+      "recall_at_1": 0.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 0.5,
+      "section_match": false,
+      "total_ms_median": 800.4,
+      "total_ms_runs": [
+        814.5,
+        799.3,
+        800.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "Настройка Sunshine: Планшет как второй монитор (KDE Wayland)",
+          "score": 0.0791
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "📁 Документация и файлы",
+          "score": 0.0407
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/Infrastructure/Свой репозиторий Arch Linux/Свой репозиторий Arch Linux (Идея).md",
+          "section": "Ключевые преимущества:",
+          "score": 0.039
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "💻 Компьютеры и телефоны",
+          "score": 0.0323
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.0323
+        }
+      ]
+    },
+    {
+      "query": "как направить dns-запросы роутера через pi-hole в vpn-сети",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 793.4,
+      "total_ms_runs": [
+        809.0,
+        793.4,
+        791.5
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "Добавляем адреса наших Pi-hole из сети Headscale",
+          "score": 0.0962
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Маскируем трафик Свитча при уходе в туннель (чтобы сервер думал, что запросы идут от роутера)",
+          "score": 0.0531
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🌐 Сеть и маршрутизация",
+          "score": 0.051
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.0486
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/Infrastructure/Homelab Strategy/Стратегия и монетизация Homelab.md",
+          "section": "⚠️ Уроки и особенности разработки (Knowledge Base)",
+          "score": 0.0451
+        }
+      ]
+    },
+    {
+      "query": "как использовать планшет как беспроводной второй монитор для ноутбука",
+      "category": "semantic",
+      "expected_files": [
+        "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 803.1,
+      "total_ms_runs": [
+        803.1,
+        803.3,
+        794.6
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "1. modedeskprep.sh (Команда подготовки / Do Command)",
+          "score": 0.0781
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🔗 Интеграция устройств",
+          "score": 0.0469
+        },
+        {
+          "rank": 3,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Linux",
+          "score": 0.0417
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "3. Как использовать в OpenCode",
+          "score": 0.0396
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "💻 ThinkPad X270 — Arch Linux",
+          "score": 0.0358
+        }
+      ]
+    },
+    {
+      "query": "как переключить встроенную графику intel meteor lake на драйвер xe вместо i915",
+      "category": "semantic",
+      "expected_files": [
+        "dev/redmibook pro 14/Включение драйвера Xe для Intel.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 815.4,
+      "total_ms_runs": [
+        815.4,
+        798.3,
+        844.6
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/redmibook pro 14/Включение драйвера Xe для Intel.md",
+          "section": "Суть",
+          "score": 0.0803
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/AI/Intel NPU OpenVINO/Intel NPU OpenVINO.md",
+          "section": "💻 Аппаратный контекст и драйверы",
+          "score": 0.051
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Глубокое_исследование_компиляции_Gemma_4_26B_и_лимитов_драйвера_Intel_Arc.md",
+          "section": "1. Архитектурный предел: Dense 24B vs MoE 26B на Intel Arc iGPU",
+          "score": 0.0471
+        },
+        {
+          "rank": 4,
+          "filename": "dev/🗺️ Карта проектов (MOC).md",
+          "section": "Intel NPU OpenVINO|Локальный инференс на Intel NPU (OpenVINO)",
+          "score": 0.0365
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/AI/Local AI/Локальный ИИ.md",
+          "section": "💻 Аппаратный контекст",
+          "score": 0.0345
+        }
+      ]
+    },
+    {
+      "query": "как получить доступ к домашней сети из публичного wifi где провайдер режет туннели по sni",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 795.8,
+      "total_ms_runs": [
+        795.8,
+        806.5,
+        785.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "1. Блокировка по SNI (подтверждена)",
+          "score": 0.0697
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.0493
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "3. Настройка Firewall (OpenWrt)",
+          "score": 0.0482
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Internet Ulm e.V. — клуб-провайдер и хостинг.md",
+          "section": "📝 Как вступить",
+          "score": 0.0377
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Аудит безопасности инфраструктуры (тестирование себя).md",
+          "section": "3. Латентное движение из слабой точки",
+          "score": 0.0372
+        }
+      ]
+    },
+    {
+      "query": "как собрать домашний nas с nextcloud transmission и jellyfin в lxc-контейнерах",
+      "category": "semantic",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 797.7,
+      "total_ms_runs": [
+        797.7,
+        794.1,
+        799.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md",
+          "section": "1. Подготовка дискового пространства (Хост Proxmox)",
+          "score": 0.0801
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "Локальное хранилище (Virtual NAS)",
+          "score": 0.0656
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Programming/Ansible/Ansible - Автоматизация Homelab.md",
+          "section": "Запустить контейнер",
+          "score": 0.0474
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "🛠️ Шаг 3: Настройка LXC контейнера (alfa)",
+          "score": 0.0407
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "Обнаружено дополнительно",
+          "score": 0.038
+        }
+      ]
+    },
+    {
+      "query": "не просыпается при подключении зарядки",
+      "category": "casual",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Состояние сна"
+      ],
+      "hit_rank": 2,
+      "recall_at_1": 0.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 0.5,
+      "section_match": true,
+      "total_ms_median": 794.6,
+      "total_ms_runs": [
+        794.6,
+        792.7,
+        815.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Home Assistant/автоматизация зарядки и разрядки акамулятора с мощью умной розетки и подлкючние ее к хомасистант.md",
+          "section": "вступление",
+          "score": 0.0715
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Состояние сна",
+          "score": 0.0597
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+          "section": "⚠️ Зависимости (ключевое)",
+          "score": 0.0457
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+          "section": "вступление",
+          "score": 0.0393
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Ждем 10 секунд при загрузке, чтобы Tailscale успел запустить свои правила",
+          "score": 0.0375
+        }
+      ]
+    },
+    {
+      "query": "фото не синкаются между ноутбуками",
+      "category": "casual",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Syncthing для фото (LAN-only)"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": true,
+      "total_ms_median": 794.8,
+      "total_ms_runs": [
+        797.9,
+        791.9,
+        794.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Syncthing для фото (LAN-only)",
+          "score": 0.0644
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🔗 Интеграция устройств",
+          "score": 0.0453
+        },
+        {
+          "rank": 3,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "Держим сессию активной, пока клиент не отключится",
+          "score": 0.036
+        },
+        {
+          "rank": 4,
+          "filename": "Deutsch/Grammatik/plural.md",
+          "section": "Plural (Множественное число)",
+          "score": 0.0359
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "Локальная модель",
+          "score": 0.0317
+        }
+      ]
+    },
+    {
+      "query": "ноутбук думает что на зарядке хотя зарядка не подключена",
+      "category": "casual",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Фантомный USB-C и guard"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": false,
+      "total_ms_median": 821.9,
+      "total_ms_runs": [
+        835.0,
+        821.9,
+        802.7
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "Что изменилось",
+          "score": 0.0622
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Proxmox/профиль енергосбережения.md",
+          "section": "вступление",
+          "score": 0.0444
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "🎯 Задача",
+          "score": 0.0394
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Глубокое_исследование_компиляции_Gemma_4_26B_и_лимитов_драйвера_Intel_Arc.md",
+          "section": "4. Эксперимент №3: Попытка сборки через мультимодальный VLMPipeline",
+          "score": 0.039
+        },
+        {
+          "rank": 5,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "Настройка Sunshine: Планшет как второй монитор (KDE Wayland)",
+          "score": 0.0389
+        }
+      ]
+    },
+    {
+      "query": "сколько ватт жрет сервер в простое",
+      "category": "casual",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+        "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+        "dev/Infrastructure/Proxmox/профиль енергосбережения.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 823.2,
+      "total_ms_runs": [
+        848.8,
+        823.2,
+        813.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Proxmox/профиль енергосбережения.md",
+          "section": "вступление",
+          "score": 0.0698
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "🛠 Обслуживание VPS (диск и память)",
+          "score": 0.0535
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Internet Ulm e.V. — клуб-провайдер и хостинг.md",
+          "section": "🖥 Server-Homeing (свой сервер)",
+          "score": 0.0522
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Маскируем трафик Свитча при уходе в туннель (чтобы сервер думал, что запросы идут от роутера)",
+          "score": 0.0456
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Аудит безопасности инфраструктуры (тестирование себя).md",
+          "section": "🧭 Четыре слоя теста",
+          "score": 0.0453
+        }
+      ]
+    },
+    {
+      "query": "после перезагрузки дашборд выдает 403",
+      "category": "casual",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 805.5,
+      "total_ms_runs": [
+        839.5,
+        805.5,
+        800.7
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Симптомы",
+          "score": 0.0848
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "Порядок запуска (Boot Order)",
+          "score": 0.0571
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+          "section": "🧭 Порядок работы в CIMC CLI",
+          "score": 0.0413
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/Алиасы управления Local AI.md",
+          "section": "Шпаргалка по командам",
+          "score": 0.0379
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md",
+          "section": "4. Настройка дашборда (Homepage)",
+          "score": 0.0373
+        }
+      ]
+    },
+    {
+      "query": "какой пароль на прошивке uefi",
+      "category": "casual",
+      "expected_files": [
+        "dev/Programming/uefi pass.md",
+        "dev/redmibook pro 14/uefi pass.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 802.1,
+      "total_ms_runs": [
+        796.4,
+        802.1,
+        808.0
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Programming/uefi pass.md",
+          "section": "вступление",
+          "score": 0.085
+        },
+        {
+          "rank": 2,
+          "filename": "dev/redmibook pro 14/uefi pass.md",
+          "section": "вступление",
+          "score": 0.0848
+        },
+        {
+          "rank": 3,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "UEFI",
+          "score": 0.0758
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Programming/Linux/Virtual box.md",
+          "section": "вступление",
+          "score": 0.05
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Grammatik/W-Fragen.md",
+          "section": "Нюанс с \"Wie\" (Как / Какой)",
+          "score": 0.0428
+        }
+      ]
+    },
+    {
+      "query": "как показать скрытые файлы в проводнике kde",
+      "category": "casual",
+      "expected_files": [
+        "dev/Programming/Linux/KDE.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 804.4,
+      "total_ms_runs": [
+        804.4,
+        824.9,
+        793.3
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Programming/Linux/KDE.md",
+          "section": "вступление",
+          "score": 0.0932
+        },
+        {
+          "rank": 2,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "1. modedeskprep.sh (Команда подготовки / Do Command)",
+          "score": 0.0643
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "KDE / батарея / зеркала",
+          "score": 0.0546
+        },
+        {
+          "rank": 4,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Linux",
+          "score": 0.044
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Programming/Linux/becup.md",
+          "section": "Связанные заметки",
+          "score": 0.0393
+        }
+      ]
+    },
+    {
+      "query": "thinkpad x270",
+      "category": "device_name",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+        "dev/Infrastructure/My IT Infrastructure & Devices.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 802.8,
+      "total_ms_runs": [
+        810.1,
+        802.2,
+        802.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "SSH",
+          "score": 0.0995
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/AI/Obsidian NPU Search/Obsidian NPU Search.md",
+          "section": "✅ Сделано",
+          "score": 0.0246
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🔗 Интеграция устройств",
+          "score": 0.0241
+        },
+        {
+          "rank": 4,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Основная документация",
+          "score": 0.0218
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "ultra-combo — максимальное качество",
+          "score": 0.0115
+        }
+      ]
+    },
+    {
+      "query": "redmibook pro 14",
+      "category": "device_name",
+      "expected_files": [
+        "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+        "dev/redmibook pro 14/Включение драйвера Xe для Intel.md",
+        "dev/redmibook pro 14/uefi pass.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 818.1,
+      "total_ms_runs": [
+        818.1,
+        815.5,
+        828.0
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/redmibook pro 14/uefi pass.md",
+          "section": "вступление",
+          "score": 0.0907
+        },
+        {
+          "rank": 2,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "UEFI",
+          "score": 0.0577
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Редизайн_бенчмарка_и_прорыв_запуска_Gemma_4_26B_через_Xenolith.md",
+          "section": "📋 Метаданные",
+          "score": 0.0552
+        },
+        {
+          "rank": 4,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "Держим сессию активной, пока клиент не отключится",
+          "score": 0.0546
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/AI/Intel NPU OpenVINO/Intel NPU OpenVINO.md",
+          "section": "💻 Аппаратный контекст и драйверы",
+          "score": 0.0531
+        }
+      ]
+    },
+    {
+      "query": "proxmox alfa базовый конфиг",
+      "category": "device_name",
+      "expected_files": [
+        "dev/Infrastructure/Proxmox/Базовый конфиг.md",
+        "dev/Infrastructure/My IT Infrastructure & Devices.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 795.2,
+      "total_ms_runs": [
+        795.2,
+        789.6,
+        799.2
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Proxmox/Базовый конфиг.md",
+          "section": "вступление",
+          "score": 0.1006
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "Cisco Alfa — детали",
+          "score": 0.079
+        },
+        {
+          "rank": 3,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Proxmox",
+          "score": 0.0686
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Proxmox/Cisco C220 M3 - профили питания BIOS (CIMC).md",
+          "section": "Cisco C220 M3 — профили питания BIOS через CIMC",
+          "score": 0.0546
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "Обнаружено дополнительно",
+          "score": 0.046
+        }
+      ]
+    },
+    {
+      "query": "m5stack cardputer персональный ассистент",
+      "category": "device_name",
+      "expected_files": [
+        "dev/Projects/ESP32/cardputer-ai/форк закртоого проект на кардпуетерп (персональный аи аситистнет).md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 802.1,
+      "total_ms_runs": [
+        802.1,
+        798.9,
+        811.4
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Projects/ESP32/cardputer-ai/форк закртоого проект на кардпуетерп (персональный аи аситистнет).md",
+          "section": "🚀 Персональный ИИ-ассистент на Cardputer (Форк EltonLabs)",
+          "score": 0.1289
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🎮 Гаджеты и накопители",
+          "score": 0.0577
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-07_Интеграция_Xenolith_в_FastAPI_и_запуск_Gemma_4_26B_в_OpenCode.md",
+          "section": "📋 Метаданные",
+          "score": 0.0389
+        },
+        {
+          "rank": 4,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Linux",
+          "score": 0.0384
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Редизайн_бенчмарка_и_прорыв_запуска_Gemma_4_26B_через_Xenolith.md",
+          "section": "📋 Метаданные",
+          "score": 0.032
+        }
+      ]
+    },
+    {
+      "query": "gl-mt3000 travel router",
+      "category": "device_name",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+        "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+        "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 790.2,
+      "total_ms_runs": [
+        784.5,
+        797.2,
+        790.2
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "🛠️ Шаг 4: Настройка роутера GL-MT3000",
+          "score": 0.0793
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "Роутер GL-MT3000 (172.16.67.1)",
+          "score": 0.0722
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "Концепция",
+          "score": 0.0651
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "ultra-combo — максимальное качество",
+          "score": 0.0395
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Projects/Infrastructure/microtick psd/microtick psd.md",
+          "section": "🗺️ Дорожная карта (Roadmap)",
+          "score": 0.0388
+        }
+      ]
+    },
+    {
+      "query": "traefik видит ip 172.18.0.1 docker шлюз вместо реального адреса клиента",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 797.5,
+      "total_ms_runs": [
+        797.5,
+        794.9,
+        845.6
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.0798
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0591
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🌐 Сеть и маршрутизация",
+          "score": 0.0522
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/OmniRoute.md",
+          "section": "4. Docker-шлюз (сейчас — на Oracle, Франкфурт)",
+          "score": 0.0476
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Создание легкого Virtual NAS на Proxmox LXC.md",
+          "section": "4. Настройка дашборда (Homepage)",
+          "score": 0.0415
+        }
+      ]
+    },
+    {
+      "query": "nintendo switch nat type f не работает онлайн-игра",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 822.6,
+      "total_ms_runs": [
+        822.6,
+        832.5,
+        811.3
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Настройка NAT Type B для Nintendo Switch через Tailscale (GL.iNet + LXC + MikroTik)",
+          "score": 0.1069
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🎮 Гаджеты и накопители",
+          "score": 0.042
+        },
+        {
+          "rank": 3,
+          "filename": "README.md",
+          "section": "Если играешь на Eden",
+          "score": 0.0375
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/ESP32/cardputer-ai/форк закртоого проект на кардпуетерп (персональный аи аситистнет).md",
+          "section": "💻 Архитектура и структура решения",
+          "score": 0.0308
+        },
+        {
+          "rank": 5,
+          "filename": "📚 Карта знаний (MOC).md",
+          "section": "Основная документация",
+          "score": 0.0293
+        }
+      ]
+    },
+    {
+      "query": "headscale контейнер падает с ошибкой FATAL после обновления",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 842.9,
+      "total_ms_runs": [
+        842.9,
+        922.1,
+        834.0
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0804
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/DevOps/headscale-cli/headscale-cli.md",
+          "section": "Переменные окружения (Environment)",
+          "score": 0.0642
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Симптомы",
+          "score": 0.0566
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Обслуживание/Автоматизация обновлений серверов.md",
+          "section": "⚙️ Автоматизация обновлений серверов",
+          "score": 0.0442
+        },
+        {
+          "rank": 5,
+          "filename": "dev/🗺️ Карта проектов (MOC).md",
+          "section": "headscale-cli|Headscale CLI (hscli)",
+          "score": 0.0429
+        }
+      ]
+    },
+    {
+      "query": "pacman зависает и ждет таймаут при обновлении",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/ThinkPad X270 — Arch Linux.md"
+      ],
+      "expected_sections": [
+        "Общий кэш пакетов (CacheServer)"
+      ],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": true,
+      "total_ms_median": 912.7,
+      "total_ms_runs": [
+        939.1,
+        912.7,
+        849.9
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/ThinkPad X270 — Arch Linux.md",
+          "section": "📦 Общий кэш пакетов (CacheServer)",
+          "score": 0.061
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/AI/Local AI/OpenCode_и_Local_AI.md",
+          "section": "Почему таймауты увеличены",
+          "score": 0.0589
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Алиасы управления Local AI.md",
+          "section": "Шпаргалка по командам",
+          "score": 0.0493
+        },
+        {
+          "rank": 4,
+          "filename": "dev/redmibook pro 14/Sunshine - Второй монитор (KDE Wayland).md",
+          "section": "2. modedeskcmd.sh (Команда приложения / Command)",
+          "score": 0.0476
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Proxmox/касотомные сервис снижение потребелния.md",
+          "section": "вступление",
+          "score": 0.0448
+        }
+      ]
+    },
+    {
+      "query": "tailscale p2p-соединения идут через derp-релеи вместо прямых",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+        "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 900.1,
+      "total_ms_runs": [
+        900.1,
+        917.2,
+        838.3
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "1. Блокировка по SNI (подтверждена)",
+          "score": 0.0654
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка NAT Type B для Nintendo Switch через Tailscale.md",
+          "section": "Маскируем трафик Свитча при уходе в туннель (чтобы сервер думал, что запросы идут от роутера)",
+          "score": 0.0588
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0509
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Настройка DNS роутера через Headscale.md",
+          "section": "3. Настройка Firewall (OpenWrt)",
+          "score": 0.044
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.041
+        }
+      ]
+    },
+    {
+      "query": "yay кэш занял кучу места на диске",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Projects/AI/Local AI/Сессии/2026-10-06_Глубокое_исследование_компиляции_Gemma_4_26B_и_лимитов_драйвера_Intel_Arc.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 2,
+      "recall_at_1": 0.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 0.5,
+      "section_match": null,
+      "total_ms_median": 882.0,
+      "total_ms_runs": [
+        846.1,
+        882.0,
+        919.1
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Projects/AI/Local AI/Локальный ИИ.md",
+          "section": "Xenolith-кэш",
+          "score": 0.0602
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Глубокое_исследование_компиляции_Gemma_4_26B_и_лимитов_драйвера_Intel_Arc.md",
+          "section": "1. Подготовка экстремального объема памяти и очистка диска",
+          "score": 0.0548
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Projects/AI/Local AI/Руководство.md",
+          "section": "Кэш префикса — почему повторный ход стал секундным",
+          "score": 0.0535
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Projects/AI/Local AI/Сессии/2026-10-06_Оптимизация_проекта_и_кэшей.md",
+          "section": "🎯 Цели и фокус сессии",
+          "score": 0.0528
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "Fujitsu PBS — детали",
+          "score": 0.049
+        }
+      ]
+    },
+    {
+      "query": "устройства вылетают из vpn-сети раз в полгода",
+      "category": "error_symptom",
+      "expected_files": [
+        "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 884.7,
+      "total_ms_runs": [
+        884.7,
+        899.7,
+        847.3
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "dev/Infrastructure/Обслуживание/Обновление Headscale до 0.29.4.md",
+          "section": "🛠 Критические изменения в конфигурации (config.yaml)",
+          "score": 0.0739
+        },
+        {
+          "rank": 2,
+          "filename": "dev/Infrastructure/Настройки и Сеть/Traefik и Headscale - решение проблемы 403 Forbidden.md",
+          "section": "Причина",
+          "score": 0.0619
+        },
+        {
+          "rank": 3,
+          "filename": "dev/Infrastructure/My IT Infrastructure & Devices.md",
+          "section": "🗺 Схема инфраструктуры",
+          "score": 0.0519
+        },
+        {
+          "rank": 4,
+          "filename": "dev/Infrastructure/Настройки и Сеть/BayernWLAN — обход DPI и микро-туннель для Tailscale.md",
+          "section": "политика в /etc/config/routepolicy — удаляется отдельно",
+          "score": 0.05
+        },
+        {
+          "rank": 5,
+          "filename": "dev/Infrastructure/Обслуживание/Аудит безопасности инфраструктуры (тестирование себя).md",
+          "section": "🧭 Четыре слоя теста",
+          "score": 0.0401
+        }
+      ]
+    },
+    {
+      "query": "Akkusativ und Dativ wann welcher Fall",
+      "category": "deutsch",
+      "expected_files": [
+        "Deutsch/Grammatik/Akkusativ.md",
+        "Deutsch/Grammatik/Dativ.md",
+        "Deutsch/Grammatik/Pronomen_Kasus.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 1,
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 1.0,
+      "section_match": null,
+      "total_ms_median": 832.7,
+      "total_ms_runs": [
+        832.7,
+        835.5,
+        793.2
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "Deutsch/Grammatik/Dativ.md",
+          "section": "🔀 Wechselpräpositionen (предлоги двойного управления)",
+          "score": 0.0747
+        },
+        {
+          "rank": 2,
+          "filename": "Deutsch/Grammatik/Pronomen_Kasus.md",
+          "section": "🔀 Dativ + Akkusativ",
+          "score": 0.0676
+        },
+        {
+          "rank": 3,
+          "filename": "Deutsch/Grammatik/Akkusativ.md",
+          "section": "Akkusativ (Винительный падеж)",
+          "score": 0.0626
+        },
+        {
+          "rank": 4,
+          "filename": "Deutsch/🇩🇪 Немецкий язык (MOC).md",
+          "section": "📘 Грамматика",
+          "score": 0.0513
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Grammatik/plural.md",
+          "section": "🔗 Связанные заметки",
+          "score": 0.0459
+        }
+      ]
+    },
+    {
+      "query": "wie bestimmt man das Geschlecht eines deutschen Wortes nach der Endung",
+      "category": "deutsch",
+      "expected_files": [
+        "Deutsch/Grammatik/Artikelregeln.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 3,
+      "recall_at_1": 0.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "section_match": null,
+      "total_ms_median": 871.9,
+      "total_ms_runs": [
+        871.9,
+        945.3,
+        836.3
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "Deutsch/Grammatik/plural.md",
+          "section": "🧭 Как выбрать тип",
+          "score": 0.0674
+        },
+        {
+          "rank": 2,
+          "filename": "Deutsch/Grammatik/Personalpronomen.md",
+          "section": "🔄 Замена существительного личным местоимением",
+          "score": 0.056
+        },
+        {
+          "rank": 3,
+          "filename": "Deutsch/Grammatik/Artikelregeln.md",
+          "section": "2. По категориям (Смысловые группы)",
+          "score": 0.0552
+        },
+        {
+          "rank": 4,
+          "filename": "Deutsch/🇩🇪 Немецкий язык (MOC).md",
+          "section": "📘 Грамматика",
+          "score": 0.0522
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Grammatik/W-Fragen.md",
+          "section": "Комбинации с \"Wie\"",
+          "score": 0.0478
+        }
+      ]
+    },
+    {
+      "query": "W-Fragen Wortstellung wo steht das Verb",
+      "category": "deutsch",
+      "expected_files": [
+        "Deutsch/Grammatik/W-Fragen.md"
+      ],
+      "expected_sections": [],
+      "hit_rank": 3,
+      "recall_at_1": 0.0,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "reciprocal_rank": 0.3333333333333333,
+      "section_match": null,
+      "total_ms_median": 825.8,
+      "total_ms_runs": [
+        826.0,
+        810.6,
+        825.8
+      ],
+      "device": "NPU",
+      "top": [
+        {
+          "rank": 1,
+          "filename": "Deutsch/Словарь/das Wort.md",
+          "section": "",
+          "score": 0.0916
+        },
+        {
+          "rank": 2,
+          "filename": "Deutsch/Словарь/fragen.md",
+          "section": "",
+          "score": 0.0812
+        },
+        {
+          "rank": 3,
+          "filename": "Deutsch/Grammatik/W-Fragen.md",
+          "section": "🏗️ Порядок слов в вопросе",
+          "score": 0.0806
+        },
+        {
+          "rank": 4,
+          "filename": "Deutsch/Словарь/das Formular.md",
+          "section": "",
+          "score": 0.0546
+        },
+        {
+          "rank": 5,
+          "filename": "Deutsch/Словарь/das Bild.md",
+          "section": "",
+          "score": 0.0488
+        }
+      ]
+    }
+  ]
+}

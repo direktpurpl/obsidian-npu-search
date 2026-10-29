@@ -130,6 +130,7 @@ def run_eval(args) -> dict:
                 top_k=top_k,
                 device=args.device,
                 vault_path=args.vault_path,
+                model_dir=args.model_dir,
             )
             wall_ms = round((time.time() - started) * 1000, 1)
             run_times.append(
@@ -215,6 +216,7 @@ def run_eval(args) -> dict:
         "config": {
             "top_k": top_k,
             "device_requested": args.device,
+            "model_dir": args.model_dir or "(engine default)",
             "runs_per_query": runs,
         },
         "device_used": devices,
@@ -277,6 +279,8 @@ def main() -> None:
     parser.add_argument("--top-k", type=int, default=5, help="Results per query (default 5)")
     parser.add_argument("--device", default="auto",
                         help="Inference device: auto / NPU / GPU / CPU (default auto)")
+    parser.add_argument("--model-dir", default="",
+                        help="Model directory override (default: engine resolution)")
     parser.add_argument("--label", default="", help="Run label stored in the report")
     parser.add_argument("--runs", type=int, default=3,
                         help="Runs per query, median total_ms is taken (default 3)")
