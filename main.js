@@ -108,13 +108,13 @@ function pythonErrorText(error, stderr) {
 }
 
 class NPUSearchModal extends Modal {
-    constructor(app, plugin) {
+    constructor(app, plugin, initialFilter = 'all') {
         super(app);
         this.plugin = plugin;
         this.results = [];
         this.selectedIndex = -1;
         this.lastSearchedQuery = '';
-        this.currentFilter = 'all';
+        this.currentFilter = initialFilter;
         this.isSearching = false;
         this.filterButtons = {};
     }
@@ -675,11 +675,26 @@ module.exports = class NPUSearchPlugin extends Plugin {
         // Хоткей Ctrl+Alt+F по физической клавише (event.code) —
         // работает при любой раскладке (клавиша F даёт 'а' в русской раскладке,
         // поэтому сверка по key: 'f' не срабатывает).
+        // Ctrl+Alt+D — сразу с фильтром Deutsch (словарь, грамматика).
         this.registerDomEvent(document, 'keydown', (event) => {
-            if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey
-                && event.code === 'KeyF') {
-                event.preventDefault();
-                this.openSearch();
+            if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey) {
+                if (event.code === 'KeyF') {
+                    event.preventDefault();
+                    this.openSearch();
+                } else if (event.code === 'KeyD') {
+                    event.preventDefault();
+                    this.openSearch('deutsch');
+                }
+            }
+        });
+
+        // Команда поиска по немецкому (фильтр Deutsch)
+        this.addCommand({
+            id: 'npu-german-search',
+            name: 'Семантический поиск по немецкому (Deutsch)',
+            hotkeys: [{ modifiers: ['Mod', 'Alt'], key: 'd' }],
+            callback: () => {
+                this.openSearch('deutsch');
             }
         });
 
@@ -691,9 +706,9 @@ module.exports = class NPUSearchPlugin extends Plugin {
         });
     }
 
-    openSearch() {
+    openSearch(initialFilter = 'all') {
         if (this.activeSearchModal) return;
-        const modal = new NPUSearchModal(this.app, this);
+        const modal = new NPUSearchModal(this.app, this, initialFilter);
         this.activeSearchModal = modal;
         const originalOnClose = modal.onClose.bind(modal);
         modal.onClose = () => {
