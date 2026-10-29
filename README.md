@@ -101,7 +101,8 @@ rsync -a --info=progress2 \
 
 `Obsidian → Settings → Community plugins → Intel NPU Semantic Search`.
 
-Поиск: иконка 🧠 слева или `Ctrl+P` → «Семантический поиск по смыслу (NPU)».
+Поиск: иконка 🧠 слева, хоткей `Ctrl+Alt+F` (переназначается в
+Настройки → Горячие клавиши) или `Ctrl+P` → «Семантический поиск по смыслу (NPU)».
 
 ---
 

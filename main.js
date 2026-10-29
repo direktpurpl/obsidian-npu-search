@@ -666,6 +666,7 @@ module.exports = class NPUSearchPlugin extends Plugin {
         this.addCommand({
             id: 'npu-semantic-search',
             name: 'Семантический поиск по смыслу (NPU)',
+            hotkeys: [{ modifiers: ['Mod', 'Alt'], key: 'f' }],
             callback: () => {
                 new NPUSearchModal(this.app, this).open();
             }
