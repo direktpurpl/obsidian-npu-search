@@ -1125,7 +1125,7 @@ def start_background_reindex(
 
     log_file = os.path.join(data_dir(), "reindex.log")
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    command = [sys.executable, os.path.abspath(__file__), "--build-index"]
+    command = [sys.executable, os.path.abspath(__file__), "--build-index", "--incremental"]
     if vault_path:
         command.extend(["--vault-path", vault_path])
     if index_file:
@@ -1386,6 +1386,8 @@ def main() -> None:
     parser.add_argument("--index-file", type=str, default="", help="Path to the npz index")
     parser.add_argument("--vault-path", type=str, default="", help="Vault root for direct file access")
     parser.add_argument("--build-index", "--reindex", action="store_true", help="Rebuild the index")
+    parser.add_argument("--incremental", action="store_true",
+                        help="With --build-index: re-embed only changed notes")
     parser.add_argument("--check", action="store_true", help="Print environment diagnostics as JSON")
     parser.add_argument("--device", "-d", type=str, default="auto",
                         choices=["auto", "NPU", "GPU", "CPU"], help="Inference device")
@@ -1406,7 +1408,8 @@ def main() -> None:
         index_path = resolve_index_file(args.index_file, vault_path)
         try:
             build_or_update_index(
-                client, embedder, index_file=index_path, vault_path=vault_path, force=True
+                client, embedder, index_file=index_path, vault_path=vault_path,
+                force=not args.incremental,
             )
         finally:
             release_reindex_lock(index_path)
