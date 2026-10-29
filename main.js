@@ -675,7 +675,8 @@ module.exports = class NPUSearchPlugin extends Plugin {
         // Хоткей Ctrl+Alt+F по физической клавише (event.code) —
         // работает при любой раскладке (клавиша F даёт 'а' в русской раскладке,
         // поэтому сверка по key: 'f' не срабатывает).
-        // Ctrl+Alt+D и F12 (клавиша ★ на ThinkPad) — сразу с фильтром Deutsch.
+        // Ctrl+Alt+D, F12 и ★-клавиша ThinkPad (KEY_BOOKMARKS) — фильтр Deutsch.
+        const starKeyNames = ['Favorites', 'BrowserFavorites', 'XF86Favorites', 'Bookmarks'];
         this.registerDomEvent(document, 'keydown', (event) => {
             if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey) {
                 if (event.code === 'KeyF') {
@@ -685,10 +686,19 @@ module.exports = class NPUSearchPlugin extends Plugin {
                     event.preventDefault();
                     this.openSearch('deutsch');
                 }
-            } else if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
-                && event.code === 'F12') {
+                return;
+            }
+            const isStarKey = starKeyNames.includes(event.code) || starKeyNames.includes(event.key);
+            if (!event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey
+                && (event.code === 'F12' || isStarKey)) {
                 event.preventDefault();
                 this.openSearch('deutsch');
+                return;
+            }
+            // Диагностика: спецклавиши с неизвестными именами пишем в keys.log,
+            // чтобы по логу найти код ★-клавиши, если она не в списке выше.
+            if (event.key && event.key.length > 1) {
+                this.logUnknownKey(event);
             }
         });
 
@@ -711,6 +721,21 @@ module.exports = class NPUSearchPlugin extends Plugin {
             name: 'Пересобрать векторный NPU-индекс заметок',
             callback: () => this.rebuildIndex()
         });
+    }
+
+    logUnknownKey(event) {
+        // Игнорируем обычные спецклавиши, чтобы не засорять лог.
+        const common = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab', 'Enter',
+            'Escape', 'Backspace', 'Delete', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
+            'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'ContextMenu'];
+        if (common.includes(event.key)) return;
+        if (/^F\d{1,2}$/.test(event.key)) return;
+        try {
+            const logFile = path.join(getDataDir(), 'keys.log');
+            const stamp = new Date().toISOString().slice(11, 19);
+            fs.appendFileSync(logFile,
+                `${stamp} key=${event.key} code=${event.code} keyCode=${event.keyCode}\n`);
+        } catch (e) { /* диагностика не должна ломать работу */ }
     }
 
     openSearch(initialFilter = 'all') {
