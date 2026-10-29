@@ -676,8 +676,9 @@ module.exports = class NPUSearchPlugin extends Plugin {
         // работает при любой раскладке (клавиша F даёт 'а' в русской раскладке,
         // поэтому сверка по key: 'f' не срабатывает).
         // Ctrl+Alt+D и ★-клавиша ThinkPad (KEY_BOOKMARKS) — фильтр Deutsch.
-        const starKeyNames = ['Favorites', 'BrowserFavorites', 'XF86Favorites', 'Bookmarks',
-            'LaunchAssistant'];
+        // Клавиша ассистента (LaunchAssistant) на main занята глобальным
+        // запуском OpenCode CLI — в плагине не перехватывается.
+        const starKeyNames = ['Favorites', 'BrowserFavorites', 'XF86Favorites', 'Bookmarks'];
         this.registerDomEvent(document, 'keydown', (event) => {
             if ((event.ctrlKey || event.metaKey) && event.altKey && !event.shiftKey) {
                 if (event.code === 'KeyF') {
@@ -696,11 +697,10 @@ module.exports = class NPUSearchPlugin extends Plugin {
                 this.openSearch('deutsch');
                 return;
             }
-            // Диагностика: спецклавиши с неизвестными именами пишем в keys.log,
-            // чтобы по логу найти код ★-клавиши, если она не в списке выше.
-            if (event.key && event.key.length > 1) {
-                this.logUnknownKey(event);
-            }
+            // Диагностика клавиш (отключена):
+            // if (event.key && event.key.length > 1) {
+            //     this.logUnknownKey(event);
+            // }
         });
 
         // Команда поиска по немецкому (фильтр Deutsch)
@@ -723,19 +723,20 @@ module.exports = class NPUSearchPlugin extends Plugin {
         });
     }
 
-    logUnknownKey(event) {
-        // Игнорируем обычные спецклавиши, чтобы не засорять лог.
-        const common = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab', 'Enter',
-            'Escape', 'Backspace', 'Delete', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
-            'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'ContextMenu'];
-        if (common.includes(event.key)) return;
-        try {
-            const logFile = path.join(getDataDir(), 'keys.log');
-            const stamp = new Date().toISOString().slice(11, 19);
-            fs.appendFileSync(logFile,
-                `${stamp} key=${event.key} code=${event.code} keyCode=${event.keyCode}\n`);
-        } catch (e) { /* диагностика не должна ломать работу */ }
-    }
+    // Диагностика клавиш — временно отключена (закомментирована).
+    // Скрипт перехвата сырых клавиш: scripts/keycap.py
+    // logUnknownKey(event) {
+    //     const common = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Tab', 'Enter',
+    //         'Escape', 'Backspace', 'Delete', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
+    //         'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'ContextMenu'];
+    //     if (common.includes(event.key)) return;
+    //     try {
+    //         const logFile = path.join(getDataDir(), 'keys.log');
+    //         const stamp = new Date().toISOString().slice(11, 19);
+    //         fs.appendFileSync(logFile,
+    //             `${stamp} key=${event.key} code=${event.code} keyCode=${event.keyCode}\n`);
+    //     } catch (e) { /* диагностика не должна ломать работу */ }
+    // }
 
     openSearch(initialFilter = 'all') {
         if (this.activeSearchModal) return;
