@@ -729,7 +729,6 @@ module.exports = class NPUSearchPlugin extends Plugin {
             'Escape', 'Backspace', 'Delete', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
             'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown', 'ContextMenu'];
         if (common.includes(event.key)) return;
-        if (/^F\d{1,2}$/.test(event.key)) return;
         try {
             const logFile = path.join(getDataDir(), 'keys.log');
             const stamp = new Date().toISOString().slice(11, 19);
