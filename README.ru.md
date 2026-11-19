@@ -9,6 +9,8 @@
 Работает и на машинах без NPU: плагин переключается на CPU, строит индекс один
 раз и дальше обновляет его инкрементально.
 
+![Окно семантического поиска с результатами](docs/screenshot.png)
+
 > **Плагина нет в каталоге Obsidian.** Ему нужен Python-рантайм и локальная
 > модель OpenVINO, а их нельзя упаковать в `main.js`. Установка — из исходников,
 > как описано ниже.
@@ -158,6 +160,7 @@ obsidian-npu-search/                       # git-репозиторий (тол�
 ├── main.js                                # UI и команды Obsidian
 ├── manifest.json
 ├── styles.css
+├── docs/screenshot.png                    # скриншот для README
 ├── requirements.txt
 ├── requirements-model.txt
 ├── eval/

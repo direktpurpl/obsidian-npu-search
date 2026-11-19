@@ -10,6 +10,8 @@ through **OpenVINO** and picks the accelerator automatically:
 CPU-only machines work too: the plugin falls back to CPU, builds the index once
 and keeps it up to date incrementally.
 
+![Semantic search modal with ranked results](docs/screenshot.png)
+
 > **Not in the Obsidian Community directory.** The plugin needs a Python runtime
 > and a local OpenVINO model, which cannot be shipped inside `main.js`. Install
 > it from source as described below.
@@ -159,6 +161,7 @@ obsidian-npu-search/                       # git repository (code only)
 ├── main.js                                # Obsidian UI and commands
 ├── manifest.json
 ├── styles.css
+├── docs/screenshot.png                    # README screenshot
 ├── requirements.txt
 ├── requirements-model.txt
 ├── eval/
