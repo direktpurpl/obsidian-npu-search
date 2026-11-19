@@ -1,141 +1,142 @@
-# 🗺️ Дорожная карта: быстрый и качественный поиск
+# Roadmap: fast and accurate search
 
-План улучшений NPU-поиска. Пока ничего не реализовано — здесь только варианты
-и порядок работ. Выбранные варианты отмечаются галочками и переносятся в работу.
+**English** | [Русский](ROADMAP.ru.md)
 
-Файл — единственный источник плана. Замеры по X270 — в заметке vault
-`dev/Infrastructure/ThinkPad X270 — Arch Linux.md`.
+Improvement plan for the NPU search plugin. Nothing here is guaranteed — these
+are options and the order of work. Accepted items are checked off and moved into
+development.
+
+This file is the single source of the plan.
 
 ---
 
-## 🎯 Цели
+## Goals
 
-1. **Скорость отклика.** Полный поиск (от нажатия до результатов):
-   - X270 (CPU): **≤ 1 с** (сейчас ~1.9–2.2 с);
-   - main (NPU/CPU): **≤ 0.5 с** (сейчас ~1.1 с).
-2. **Качество выдачи.** Точные термины (команды, IP, MAC, имена моделей),
-   правильная заметка в топ-3, правильная секция в топ-1.
-3. **Без ожидания.** Пересборка/обновление индекса не блокирует поиск.
+1. **Response time.** Full search (keystroke → results):
+   - CPU-only machines: **≤ 1 s** (currently ~1.9–2.2 s);
+   - NPU machines: **≤ 0.5 s** (currently ~1.1 s).
+2. **Result quality.** Exact terms (commands, IPs, MACs, model names), the right
+   note in the top 3, the right section at rank 1.
+3. **No waiting.** Rebuilding or updating the index never blocks search.
 
-## 🚫 Ограничения (принятые решения)
+## Constraints (decisions)
 
-- **Модель не держится в оперативной памяти постоянно.** Она загружается только
-  на время запроса и выгружается после. Никаких постоянных daemon/резидентных
-  процессов с моделью в RAM — этот вариант **отклонён**.
-- Работает одинаково на main и X270 без ручной переконфигурации.
-- Runtime-данные (venv, модель, индекс, кэш) остаются в `~/.local/share/npu-search`.
+- **The model is not kept in RAM permanently.** It is loaded only for the
+  duration of a query and released afterwards. Resident daemon processes are
+  **rejected**.
+- Same behavior on NPU and CPU-only machines without manual reconfiguration.
+- Runtime data (venv, model, index, cache) stays in `~/.local/share/npu-search`.
 
-## 📊 Текущие замеры (baseline)
+## Baseline measurements
 
-| Метрика | main (NPU) | X270 (CPU) |
+| Metric | NPU | CPU only |
 | :-- | --: | --: |
-| Загрузка модели на запрос | ~0.86 с | ~1.2–1.6 с |
-| Эмбеддинг запроса | ~130 мс (NPU) / ~75 мс (CPU) | ~90 мс |
-| Поиск по индексу (dot product) | < 1 мс | < 1 мс |
-| Полный отклик | ~1.1 с | ~1.9–2.2 с |
-| Полная индексация (207 заметок / ~1050 секций) | ~63 с | ~4–5 мин |
+| Model load per query | ~0.86 s | ~1.2–1.6 s |
+| Query embedding | ~130 ms (NPU) / ~75 ms (CPU) | ~90 ms |
+| Index search (dot product) | < 1 ms | < 1 ms |
+| Full response | ~1.1 s | ~1.9–2.2 s |
+| Full reindex (207 notes / ~1050 sections) | ~63 s | ~4–5 min |
 
-**Вывод:** почти всё время — это загрузка модели, а не инференс. Главные рычаги
-скорости — уменьшить размер модели (быстрее загрузка) и уменьшить объём
-обрабатываемых токенов. Поиск по ~1000 секциям и так мгновенный.
+**Conclusion:** almost all of the time is model loading, not inference. The main
+levers for speed are a smaller model (faster load) and fewer processed tokens.
+Searching ~1000 sections is already instantaneous.
 
-**Текущий результат (гибрид + INT8, 2026-10-29):** main (NPU) — R@1 **0.875** /
-R@3 **1.000** / R@5 **1.000** / MRR **0.9292**, latency **~0.82 с** (было ~1.0 с
-на FP). Качество сильно выше исходного baseline (R@1 0.825 / MRR 0.864).
-Осталось: выкат INT8 на X270 и опциональные пункты (debounce, кэш запросов).
-
----
-
-## 📈 Фаза 0 — измеримость (сделать первым)
-
-Без этого любые улучшения оцениваются на глаз.
-
-- [x] **Eval-набор запросов** — 40 запросов с ожидаемыми заметками/секциями
-  (точные термины, смысловые, смешанные, «жизненные» формулировки, deutsch).
-- [x] **Скрипт оценки** `scripts/eval_search.py` — метрики Recall@1/3/5, MRR,
-  среднее время отклика; прогон на обеих машинах, результаты в JSON.
-- [x] **Baseline** — зафиксирован: R@1 0.825 / R@3 0.900 / R@5 0.950 / MRR 0.8642.
-
-## ⚡ Фаза 1 — скорость (без резидентной модели)
-
-Порядок — по убыванию эффекта.
-
-- [x] **INT8-квантование модели** — сделано: NNCF weight-only INT8 (вариант
-  `compress_weights`), модель 1080 → 288 МБ. Полный static INT8 провалил
-  качество (MRR 0.898) и отброшен. Результат: latency на main 1001 → 817 мс
-  (NPU), качество R@1 0.875 / MRR 0.9292 (принято: 1 флуктуирующий запрос
-  из 40). Автовыбор: INT8-модель предпочитается FP, если лежит в
-  `models/Multilingual-E5-Base-INT8`.
-- [ ] **Ограничение max length 256 токенов** — ❌ отклонено замером: экономия
-  ~10 мс на запрос (всё съедает загрузка модели), но −5 п.п. R@1 (русские
-  секции ~300–350 токенов, усечение режет содержимое). Оставлено 512.
-- [x] **Батчевая индексация** (батчи по 16 секций) — сделано: полная
-  пересборка на main 63 → 32 с.
-- [x] **Фоновое обновление индекса** — сделано: поиск не ждёт переиндексацию,
-  фоновый одноразовый процесс + lock-файл + атомарная запись npz.
-- [x] **Перемерить NPU / GPU / CPU на main** — сделано: CPU чуть быстрее по
-  latency (492 против 817 мс), но по решению владельца оставлен **NPU**,
-  чтобы не греть CPU. X270 и так на CPU.
-- [ ] **Debounce 250 мс** в UI для поиска на лету (если включим живой ввод).
-- [ ] **LRU-кэш последних запросов** (опционально) — повторные запросы мгновенно.
-- [ ] **Прогрев кэша ОС** (опционально) — одноразовый запуск при старте Obsidian
-  прогревает файлы модели в page cache; модель после запроса всё равно выгружается.
-
-> ANN/HNSW/FAISS не нужны: на ~1000 секций brute force быстрее и проще.
-
-## 🎯 Фаза 2 — качество
-
-- [x] **Гибрид dense + BM25** — keyword-индекс (SQLite FTS5) по секциям + векторный;
-  слияние через RRF (k=20). Сделано: R@1 0.825→0.900, MRR 0.864→0.946.
-- [x] **Буст title / heading / tags** — совпадение токенов запроса с заголовком
-  секции, путём заметки и тегами поднимает результат.
-- [x] **Breadcrumbs** — цепочка заголовков в тексте секции (Anthropic-style).
-- [x] **Анти-хаб штраф** — понижение крупных «хабовых» заметок (MOC и т.п.),
-  beta=0.1, подобрано перебором 12 конфигов на eval-наборе.
-- [ ] **Token-aware нарезка секций** — по абзацам/токенам с overlap 15–20%
-  вместо обрезки до 1000 символов. Лучше покрытие длинных секций.
-- [x] **Token-aware нарезка секций** — частично: нарезка по заголовкам с breadcrumbs;
-  нарезка по абзацам с overlap остаётся опциональным улучшением.
-- [x] **Breadcrumbs** — в текст секции добавляется путь заголовков
-  (например: `X270 → Питание → Фантомный USB-C`). Сделано.
-- [ ] **Исключение служебных заметок** — `README.md`, шаблоны, пустые заметки
-  понижаются или исключаются из выдачи.
-- [ ] **MMR / diversity** — не выдавать несколько почти одинаковых заметок.
-- [ ] **Reranker top-10/20** (опционально, по флагу) — cross-encoder
-  пересортировывает кандидатов. +0.3–1 с на CPU — противоречит цели скорости,
-  поэтому только как отдельный режим «уточнить выдачу» или на main.
-- [ ] **Смена модели** (опционально):
-  - `multilingual-e5-small` — в 2–3 раза быстрее base, качество ниже;
-    компромисс для X270, если INT8 не хватит по скорости;
-  - `multilingual-e5-large` / `bge-m3` — качество выше, но 2.2 ГБ и медленно;
-    взвешенно, только если eval покажет нехватку качества.
-- [ ] **Query expansion / HyDE** (опционально) — переписывание запроса локальной
-  LLM. +0.5–3 с, сложно, не всегда помогает — последний пункт.
-
-## 🚫 Отклонено
-
-- **Постоянный daemon с моделью в RAM** — не устраивает по памяти; модель
-  грузится только на время запроса.
-- **ANN/HNSW/FAISS** — избыточно на текущем размере индекса.
+**Current result (hybrid + INT8):** NPU — R@1 **0.875** / R@3 **1.000** /
+R@5 **1.000** / MRR **0.9292**, latency **~0.82 s** (down from ~1.0 s on FP).
+Quality is well above the original baseline (R@1 0.825 / MRR 0.864). Remaining:
+roll INT8 out to CPU-only machines and optional items (debounce, query cache).
 
 ---
 
-## 🧩 Сборки (варианты комплектации)
+## Phase 0 — Measurability (do this first)
 
-- **Минимальная** — Фаза 0 + гибрид BM25 + буст заголовков.
-  Скорость как сейчас, качество заметно выше.
-- **Сбалансированная (рекомендуется)** — Фаза 0 + INT8 + max length 256 +
-  батчевая индексация + фоновое обновление + гибрид BM25 + буст + breadcrumbs.
-  Ожидаемо: X270 ~0.5–0.7 с, main ~0.3 с, качество выше по всем типам запросов.
-- **Максимум качества** — сбалансированная + token-aware нарезка + MMR +
-  опциональный reranker.
+Without it, any improvement is judged by feel.
 
-## 📅 Порядок реализации
+- [x] **Evaluation set** — 40 queries with expected notes/sections (exact terms,
+  semantic, mixed, natural phrasing, German).
+- [x] **Evaluation script** `scripts/eval_search.py` — Recall@1/3/5, MRR, mean
+  response time; run on both machine classes, results to JSON.
+- [x] **Baseline** — recorded: R@1 0.825 / R@3 0.900 / R@5 0.950 / MRR 0.8642.
 
-1. Фаза 0 (измеримость) — обязательна первой.
-2. INT8-квантование + max length 256 (скорость).
-3. Гибрид dense + BM25 + буст заголовков (качество).
-4. Батчевая индексация + фоновое обновление (удобство, убирает ожидание).
-5. Остальное — по результатам eval и выбору вариантов.
+## Phase 1 — Speed (without a resident model)
 
-Каждый шаг принимается по замерам до/после на eval-наборе (скорость + Recall/MRR).
+Ordered by expected impact.
+
+- [x] **INT8 quantization** — done: NNCF weight-only INT8 (`compress_weights`),
+  model 1080 → 288 MB. Full static INT8 failed quality (MRR 0.898) and was
+  discarded. Result: latency 1001 → 817 ms on NPU, quality R@1 0.875 /
+  MRR 0.9292 (one fluctuating query out of 40). Auto-selection: the INT8 model is
+  preferred over FP when present in `models/Multilingual-E5-Base-INT8`.
+- [x] **Batched indexing** (batches of 16 sections) — done: full rebuild 63 → 32 s
+  on NPU.
+- [x] **Background index updates** — done: search does not wait for reindexing;
+  one-shot background process, lock file, atomic npz write.
+- [x] **Re-measure NPU / GPU / CPU** — done: CPU is slightly faster by latency
+  (492 vs 817 ms), but NPU is kept by the owner's decision to avoid heating the
+  CPU. CPU-only machines use CPU anyway.
+- [ ] **Debounce 250 ms** in the UI for search-as-you-type (if live input is enabled).
+- [ ] **LRU query cache** (optional) — repeated queries return instantly.
+- [ ] **OS cache warm-up** (optional) — a one-shot run at Obsidian startup warms
+  the model files in the page cache; the model is still released after a query.
+
+> ANN/HNSW/FAISS are not needed: at ~1000 sections brute force is faster and simpler.
+
+## Phase 2 — Quality
+
+- [x] **Hybrid dense + BM25** — keyword index (SQLite FTS5) over sections plus
+  the vector index, fused with RRF (k=20). Done: R@1 0.825 → 0.900,
+  MRR 0.864 → 0.946.
+- [x] **Title / heading / tag boost** — query tokens matching the section
+  heading, note path or tags promote the result.
+- [x] **Breadcrumbs** — the heading chain is prepended to the section text
+  (Anthropic-style).
+- [x] **Anti-hub penalty** — demotes large "hub" notes (MOCs etc.),
+  beta = 0.1, tuned by sweeping 12 configs on the evaluation set.
+- [x] **Section chunking by headings** — partial token-aware chunking is in place:
+  sections are split by headings with breadcrumbs.
+- [ ] **Paragraph chunking with overlap** — split long sections by paragraphs or
+  tokens with 15–20% overlap instead of a 1000-character cut. Better coverage of
+  long sections.
+- [ ] **Exclude service notes** — `README.md`, templates and empty notes are
+  demoted or excluded from results.
+- [ ] **MMR / diversity** — avoid returning several near-duplicate notes.
+- [ ] **Reranker top-10/20** (optional, behind a flag) — a cross-encoder reorders
+  candidates. +0.3–1 s on CPU, which contradicts the speed goal, so only as a
+  separate "refine results" mode or on NPU.
+- [ ] **Model change** (optional):
+  - `multilingual-e5-small` — 2–3× faster than base, lower quality; a compromise
+    for CPU-only machines if INT8 is not fast enough;
+  - `multilingual-e5-large` / `bge-m3` — higher quality, but 2.2 GB and slow;
+    only if the evaluation shows a quality gap.
+- [ ] **Query expansion / HyDE** (optional) — rewriting the query with a local
+  LLM. +0.5–3 s, complex, not always helpful — the last item.
+
+## Rejected
+
+- **Resident daemon with the model in RAM** — rejected for memory reasons; the
+  model is loaded only for the duration of a query.
+- **ANN/HNSW/FAISS** — overkill at the current index size.
+- **Max length 256 tokens** — rejected by measurement: saves ~10 ms per query
+  (model loading dominates) but costs −5 pp R@1 (Russian sections are ~300–350
+  tokens, truncation cuts content). 512 is kept.
+
+---
+
+## Build presets
+
+- **Minimal** — Phase 0 + BM25 hybrid + heading boost. Speed as today, noticeably
+  better quality.
+- **Balanced (recommended)** — Phase 0 + INT8 + batched indexing + background
+  updates + BM25 hybrid + boost + breadcrumbs.
+- **Maximum quality** — balanced + paragraph chunking + MMR + optional reranker.
+
+## Implementation order
+
+1. Phase 0 (measurability) — mandatory first.
+2. INT8 quantization (speed).
+3. Hybrid dense + BM25 + heading boost (quality).
+4. Batched indexing + background updates (convenience, removes waiting).
+5. Everything else — based on evaluation results and the chosen preset.
+
+Every step is accepted based on before/after measurements on the evaluation set
+(speed + Recall/MRR).

@@ -1,290 +1,285 @@
-# 🧠 Obsidian NPU Semantic Search
+# Intel NPU Semantic Search
 
-Семантический (векторный) поиск по заметкам Obsidian. Плагин запускает
+**English** | [Русский](README.ru.md)
+
+Semantic (vector) search for Obsidian notes. The plugin runs
 [`intfloat/multilingual-e5-base`](https://huggingface.co/intfloat/multilingual-e5-base)
-через **OpenVINO** и сам выбирает ускоритель: **Intel NPU → Intel GPU → CPU**.
+through **OpenVINO** and picks the accelerator automatically:
+**Intel NPU → Intel GPU → CPU**.
 
-Работает и на ноутбуках без NPU: на ThinkPad X270 с i5-6300U поиск идёт на CPU,
-индекс строится один раз и дальше обновляется инкрементально.
+CPU-only machines work too: the plugin falls back to CPU, builds the index once
+and keeps it up to date incrementally.
 
----
-
-## ✨ Возможности
-
-- Поиск по смыслу, а не по точному совпадению слов.
-- Аппаратное ускорение на Intel NPU (AI Boost), с автоматическим fallback на GPU/CPU.
-- Категорийные фильтры: все заметки, карты знаний (MOC), проекты, `dev/`, немецкий.
-- Инкрементальный индекс: пересчитываются только новые и изменённые заметки.
-- Прямое чтение vault с диска (`--vault-path`) — быстро и без Obsidian REST API.
-- Отдельный CLI для проверки и пересборки индекса.
-- Настройки прямо в Obsidian: Python, модель, устройство, REST URL, top-K.
+> **Not in the Obsidian Community directory.** The plugin needs a Python runtime
+> and a local OpenVINO model, which cannot be shipped inside `main.js`. Install
+> it from source as described below.
 
 ---
 
-## 🛠 Требования
+## Features
 
-- Obsidian Desktop (плагин использует Node.js `child_process`).
+- Search by meaning, not by exact keyword matches.
+- Hardware acceleration on Intel NPU (AI Boost), with automatic fallback to GPU/CPU.
+- Category filters: all notes, maps of content (MOC), projects, `dev/`, German.
+- Incremental index: only new and changed notes are re-embedded.
+- Reads the vault directly from disk (`--vault-path`) — no Obsidian REST API required.
+- Standalone CLI for diagnostics and full reindexing.
+- Settings inside Obsidian: Python, model, device, top-K.
+
+---
+
+## Requirements
+
+- Obsidian Desktop (the plugin uses Node.js `child_process`).
 - Python **3.10+**.
-- Python-пакеты: `openvino`, `tokenizers`, `numpy` (ставятся через `scripts/setup.sh`).
-- Модель `Multilingual-E5-Base` в формате OpenVINO IR. Автоматически
-  предпочитается INT8-версия (≈288 МБ, квантование NNCF weight-only);
-  FP-версия (≈1.1 ГБ) используется как fallback. Квантование —
-  `scripts/quantize_int8.py`.
-- Для NPU: Meteor Lake / Lunar Lake и драйвер `intel_vpu`; для GPU — Intel GPU;
-  CPU работает всегда.
+- Python packages: `openvino`, `tokenizers`, `numpy` (installed by `scripts/setup.sh`).
+- The `Multilingual-E5-Base` model in OpenVINO IR format. The INT8 build
+  (≈288 MB, NNCF weight-only quantization) is preferred automatically; the FP
+  build (≈1.1 GB) is used as a fallback. Quantization: `scripts/quantize_int8.py`.
+- For NPU: Meteor Lake / Lunar Lake with the `intel_vpu` driver. Intel GPU is
+  used when present. CPU always works.
 
 ---
 
-## 📦 Установка
+## Installation
 
-Репозиторий — обычный git-проект. В vault он подключается **симлинком**, потому что
-Obsidian умеет загружать плагины только из `<vault>/.obsidian/plugins/<id>`.
+Obsidian loads plugins only from `<vault>/.obsidian/plugins/<id>`, so clone the
+repository straight into that directory.
 
-### 1. Клонировать и подключить
-
-```bash
-git clone git@github.com:direktpurpl/obsidian-npu-search.git \
-  ~/projekts/Puthon/obsidian-npu-search
-
-ln -s ~/projekts/Puthon/obsidian-npu-search \
-  "$VAULT/.obsidian/plugins/npu-search"
-```
-
-`$VAULT` — путь к хранилищу, например `~/Документы/learn`.
-
-### 2. Создать Python-окружение
+### 1. Clone the plugin
 
 ```bash
-~/projekts/Puthon/obsidian-npu-search/scripts/setup.sh
+PLUGIN="<vault>/.obsidian/plugins/npu-search"
+git clone https://github.com/direktpurpl/obsidian-npu-search.git "$PLUGIN"
 ```
 
-Скрипт создаёт venv **вне репозитория**:
+### 2. Create the Python environment
+
+```bash
+"$PLUGIN/scripts/setup.sh"
+```
+
+The script creates a venv **outside the repository**:
 
 ```text
 ~/.local/share/npu-search/venv
 ```
 
-### 3. Положить модель
+### 3. Install the model
 
-Вариант A — скопировать уже готовую модель с другого компьютера:
+Option A — copy an existing model from another machine:
 
 ```bash
 ~/.local/share/npu-search/venv/bin/python \
-  ~/projekts/Puthon/obsidian-npu-search/scripts/fetch_model.py \
-  --from /path/to/Multilingual-E5-Base
+  "$PLUGIN/scripts/fetch_model.py" --from /path/to/Multilingual-E5-Base
 ```
 
-Например, с main по Tailscale:
+Option B — download and export from HuggingFace:
 
 ```bash
-rsync -a --info=progress2 \
-  /home/direkt/.local/share/npu-search/models/Multilingual-E5-Base/ \
-  direkt@100.64.0.25:~/.local/share/npu-search/models/Multilingual-E5-Base/
+~/.local/share/npu-search/venv/bin/python -m pip install -r "$PLUGIN/requirements-model.txt"
+~/.local/share/npu-search/venv/bin/python "$PLUGIN/scripts/fetch_model.py" --download
 ```
 
-Вариант B — скачать и экспортировать из HuggingFace:
-
-```bash
-~/.local/share/npu-search/venv/bin/python -m pip install -r requirements-model.txt
-~/.local/share/npu-search/venv/bin/python scripts/fetch_model.py --download
-```
-
-По умолчанию модель ищется здесь:
+By default the model is looked up in:
 
 ```text
 ~/.local/share/npu-search/models/Multilingual-E5-Base
 ```
 
-Путь можно переопределить через `NPU_MODEL_DIR` или настройку плагина «Модель».
+Override it with `NPU_MODEL_DIR` or the plugin's "Model" setting.
 
-### 4. Включить плагин
+### 4. Enable the plugin
 
 `Obsidian → Settings → Community plugins → Intel NPU Semantic Search`.
 
-Поиск: иконка 🧠 слева, хоткеи `Ctrl+Alt+F` (поиск), `Ctrl+Alt+D`
-и ★-клавиша на ThinkPad (сразу фильтр Deutsch — словарь и грамматика).
-Все хоткеи работают при любой раскладке и переназначаются в
-Настройки → Горячие клавиши. Или `Ctrl+P` → «Семантический поиск по смыслу (NPU)».
+Search: the brain icon in the left ribbon, `Ctrl+Alt+F` (search), `Ctrl+Alt+D`
+(search with the German filter applied). All hotkeys work with any keyboard
+layout and can be reassigned in `Settings → Hotkeys`. Or run `Ctrl+P` →
+"Semantic search (NPU)".
 
 ---
 
-## ⚙️ Настройки плагина
+## Plugin settings
 
-| Настройка | По умолчанию | Описание |
+| Setting | Default | Description |
 | :-- | :-- | :-- |
-| Python | авто | venv плагина → `~/.local/share/npu-search/venv` → `python3` |
-| Модель | `~/.local/share/npu-search/models/Multilingual-E5-Base` | Папка с `tokenizer.json` и OpenVINO IR |
-| Устройство | `auto` | `NPU` → `GPU` → `CPU`, либо принудительно |
-| Obsidian REST API | `http://127.0.0.1:27123` | Только если vault не читается напрямую |
-| Результатов | 10 | Сколько карточек показывать |
-| Проверить | — | Диагностика окружения |
-| Пересобрать | — | Полная переиндексация |
+| Python | auto | plugin venv → `~/.local/share/npu-search/venv` → `python3` |
+| Model | `~/.local/share/npu-search/models/Multilingual-E5-Base` | Folder with `tokenizer.json` and OpenVINO IR |
+| Device | `auto` | `NPU` → `GPU` → `CPU`, or forced |
+| Obsidian REST API | `http://127.0.0.1:27123` | Only needed when the vault cannot be read from disk |
+| Results | 10 | Number of result cards |
+| Check | — | Environment diagnostics |
+| Rebuild | — | Full reindex |
 
-Кнопка «Проверить» показывает: версию Python, OpenVINO, доступные устройства,
-выбранное устройство, наличие модели и число заметок в индексе.
+"Check" reports the Python version, OpenVINO version, available devices, the
+selected device, model presence and the number of indexed notes.
 
 ---
 
-## 💻 CLI
+## CLI
 
 ```bash
 PY=~/.local/share/npu-search/venv/bin/python
-SCRIPT=~/projekts/Puthon/obsidian-npu-search/scripts/npu_vault_search.py
+SCRIPT="<vault>/.obsidian/plugins/npu-search/scripts/npu_vault_search.py"
 
-# Проверка окружения
+# Environment diagnostics
 $PY $SCRIPT --check
 
-# Поиск
+# Search
 $PY $SCRIPT --query "docker deployment" --top-k 5
 
-# Поиск только по dev/
+# Search only inside dev/
 $PY $SCRIPT --query "systemd timer" --filter dev
 
-# Полная пересборка индекса
-$PY $SCRIPT --build-index --vault-path ~/Документы/learn
+# Full reindex
+$PY $SCRIPT --build-index --vault-path /path/to/your/vault
 
-# Принудительно CPU (например, для отладки)
+# Force CPU (useful for debugging)
 $PY $SCRIPT --query "backup" --device CPU
 ```
 
-Полезные переменные окружения:
+Environment variables:
 
-| Переменная | Назначение |
+| Variable | Purpose |
 | :-- | :-- |
-| `NPU_MODEL_DIR` | Путь к модели |
-| `NPU_INDEX_FILE` | Путь к `.npz`-индексу |
-| `NPU_CACHE_DIR` | Кэш компиляции OpenVINO |
-| `NPU_DATA_DIR` | Базовый каталог данных (по умолчанию `~/.local/share/npu-search`) |
-| `OBSIDIAN_VAULT_PATH` | Корень vault |
-| `OBSIDIAN_API_KEY` | Ключ Local REST API |
+| `NPU_MODEL_DIR` | Model directory |
+| `NPU_INDEX_FILE` | Path to the `.npz` index |
+| `NPU_CACHE_DIR` | OpenVINO compilation cache |
+| `NPU_DATA_DIR` | Base data directory (default `~/.local/share/npu-search`) |
+| `OBSIDIAN_VAULT_PATH` | Vault root |
+| `OBSIDIAN_API_KEY` | Local REST API key |
 
 ---
 
-## 🗂 Где что лежит
+## Repository layout
 
 ```text
-~/projekts/Puthon/obsidian-npu-search/     # git-репозиторий (только код)
-├── main.js                                # UI и команды Obsidian
+obsidian-npu-search/                       # git repository (code only)
+├── main.js                                # Obsidian UI and commands
 ├── manifest.json
 ├── styles.css
 ├── requirements.txt
 ├── requirements-model.txt
 ├── eval/
-│   ├── queries.json                       # eval-набор из 40 запросов
-│   └── results/                           # замеры метрик (JSON)
+│   ├── queries.json                       # 40-query evaluation set
+│   └── results/                           # metrics (JSON)
 └── scripts/
-    ├── npu_vault_search.py                # движок поиска
-    ├── quantize_int8.py                   # квантование модели (NNCF)
-    ├── eval_search.py                     # оценка качества: Recall@k, MRR
-    ├── fetch_model.py                     # копирование/экспорт модели
-    └── setup.sh                           # venv + зависимости
+    ├── npu_vault_search.py                # search engine
+    ├── quantize_int8.py                   # NNCF quantization
+    ├── eval_search.py                     # Recall@k / MRR evaluation
+    ├── fetch_model.py                     # copy or export the model
+    └── setup.sh                           # venv + dependencies
 
-~/.local/share/npu-search/                 # runtime, вне git
+~/.local/share/npu-search/                 # runtime data, outside git
 ├── venv/
-├── models/Multilingual-E5-Base/           # FP-модель (fallback)
-├── models/Multilingual-E5-Base-INT8/      # INT8 (288 МБ, используется по умолчанию)
-├── indexes/<hash-vault>.npz               # векторный индекс
-├── indexes/<hash-vault>.fts.sqlite        # BM25-индекс (FTS5)
+├── models/Multilingual-E5-Base/           # FP model (fallback)
+├── models/Multilingual-E5-Base-INT8/      # INT8 (288 MB, default)
+├── indexes/<vault-hash>.npz               # vector index
+├── indexes/<vault-hash>.fts.sqlite        # BM25 index (FTS5)
 └── cache/openvino/
 ```
 
-Индекс привязан к пути vault (хэш), поэтому несколько хранилищ не конфликтуют.
-Файлы `models/`, `venv/`, `.cache/`, `*.npz` и `*.fts.sqlite` не попадают в git.
+The index is keyed by the vault path hash, so several vaults do not conflict.
+`models/`, `venv/`, `.cache/`, `*.npz` and `*.fts.sqlite` are git-ignored.
 
-INT8-модель можно получить квантованием FP:
+Build the INT8 model:
 
 ```bash
-~/.local/share/npu-search/venv/bin/python scripts/quantize_int8.py --mode weight-only
+~/.local/share/npu-search/venv/bin/python "$PLUGIN/scripts/quantize_int8.py" --mode weight-only
 ```
 
-Оценка качества (40 запросов, Recall@1/3/5, MRR):
+Run the evaluation (40 queries, Recall@1/3/5, MRR):
 
 ```bash
-~/.local/share/npu-search/venv/bin/python scripts/eval_search.py   --queries eval/queries.json --out eval/results/my.json   --vault-path /path/to/vault --label my --device auto --runs 3
+~/.local/share/npu-search/venv/bin/python "$PLUGIN/scripts/eval_search.py" \
+  --queries "$PLUGIN/eval/queries.json" --out eval/results/my.json \
+  --vault-path /path/to/your/vault --label my --device auto --runs 3
 ```
 
 ---
 
-## 🚀 Производительность
+## Performance
 
-Замеры на main (Core Ultra 7 155H, NPU) и X270 (i5-6300U, CPU, AVX2).
-Индекс — 207 заметок / ~1050 секций:
+Measured with the INT8 model, batched indexing, on an index of
+**207 notes / ~1050 sections**.
 
-| Операция | NPU (main) | CPU (X270) |
+| Operation | Intel NPU | CPU only |
 | :-- | --: | --: |
-| Полный поиск (запрос + выдача) | ~0.8 с | ~1.2 с |
-| Загрузка модели на запрос | ~0.6–0.8 с | ~1.1 с |
-| Эмбеддинг запроса | ~130 мс | ~90 мс |
-| Полная индексация (INT8, батчи) | ~90 с | ~10 мин |
-| Инкрементальное обновление | секунды | десятки секунд |
+| Full search (query → results) | ~0.8 s | ~1.2 s |
+| Model load per query | ~0.6–0.8 s | ~1.1 s |
+| Query embedding | ~130 ms | ~90 ms |
+| Index search (dot product) | < 1 ms | < 1 ms |
+| Full reindex (batched) | ~90 s | ~10 min |
+| Incremental update | seconds | tens of seconds |
 
-Замеры на INT8-модели (2026-10-29); качество по eval-набору из 40 запросов:
-R@1 0.88–0.90, R@3/R@5 1.0, MRR 0.93–0.94.
+Reference hardware: NPU column — Intel Core Ultra 7 155H (Meteor Lake);
+CPU column — Intel Core i5-6300U (Skylake, AVX2).
 
-Поиск запускает отдельный процесс Python (zero idle RAM): модель грузится на
-время запроса и выгружается. Изменённые заметки переиндексируются в фоне —
-поиск не ждёт пересборку.
+Quality on the 40-query evaluation set:
 
----
+| Metric | Score |
+| :-- | --: |
+| Recall@1 | 0.875 |
+| Recall@3 | 1.000 |
+| Recall@5 | 1.000 |
+| MRR | 0.929 |
 
-## 🧩 Как это работает
-
-1. Плагин вызывает `npu_vault_search.py` с `--query` и `--json`.
-2. Скрипт загружает векторный индекс `.npz` и keyword-индекс `.fts.sqlite`.
-3. Запрос кодируется моделью `multilingual-e5-base` (`query: ...`).
-4. Dense-выдача (косинусное сходство) и BM25-выдача (SQLite FTS5) сливаются
-   через RRF; совпадения с заголовком/путём/тегами дают буст, крупные
-   «хабовые» заметки штрафуются. Результаты возвращаются в UI.
-
-Заметка режется на секции по заголовкам; каждая секция индексируется отдельно
-(до 40 секций на заметку). Поэтому поиск находит нужный раздел даже в длинной
-заметке, а не только первые 1200 символов.
-
-Индекс хранит: путь заметки, название секции, вектор 768 измерений, `mtime` и
-размер файла. При поиске изменённые заметки переиндексируются автоматически,
-а в результатах показывается найденная секция.
+Search runs in a separate Python process (zero idle RAM): the model is loaded
+for the duration of a query and then released. Changed notes are re-embedded in
+the background, so search never waits for a rebuild.
 
 ---
 
-## 🐧 ThinkPad X270
+## How it works
 
-X270 (i5-6300U, 8 ГБ RAM) не имеет NPU и Intel Arc. Плагин это учитывает:
+1. The plugin calls `npu_vault_search.py` with `--query` and `--json`.
+2. The script loads the vector index (`.npz`) and the keyword index (`.fts.sqlite`).
+3. The query is encoded by `multilingual-e5-base` (`query: ...`).
+4. Dense results (cosine similarity) and BM25 results (SQLite FTS5) are fused
+   with RRF; matches in the heading, path or tags get a boost, large "hub" notes
+   are penalized. Results are returned to the UI.
 
-- `device=auto` выбирает **CPU**;
-- для CPU используется динамическая длина последовательности (без паддинга до 512),
-  поэтому короткие запросы считаются заметно быстрее;
-- модель и venv лежат в `~/.local/share/npu-search`, а не в vault;
-- индекс строится локально и не синхронизируется через Syncthing;
-- поиск работает без запущенного Obsidian REST API, если передан `--vault-path`.
+Each note is split into sections by headings and every section is indexed
+separately (up to 40 sections per note). That way search finds the relevant part
+of a long note instead of just the first 1200 characters.
 
-Модель на X270 можно залить с main по Tailscale (см. выше) — 1.1 ГБ при прямой
-Tailscale-связи занимает около 20–30 секунд.
+The index stores the note path, section title, a 768-dimensional vector, `mtime`
+and file size. Changed notes are re-embedded automatically during search, and the
+matching section is shown in the results.
 
 ---
 
-## 🧯 Troubleshooting
+## Troubleshooting
 
 **`No module named openvino`**
-Запустите `scripts/setup.sh` или укажите путь к Python в настройках плагина.
+Run `scripts/setup.sh`, or point the plugin's Python setting at the right interpreter.
 
 **`OpenVINO model not found`**
-Модель не найдена. Запустите `fetch_model.py --from ...` или `--download`,
-либо пропишите путь в настройке «Модель».
+The model is missing. Run `fetch_model.py --from ...` or `--download`, or set the
+"Model" setting explicitly.
 
-**NPU недоступен, выбрался CPU**
-Это нормально. Проверьте `--check`: в списке устройств должен быть `NPU`.
-На X270 NPU нет — CPU является ожидаемым поведением.
+**NPU unavailable, CPU selected**
+Expected behavior. Run `--check`: `NPU` must appear in the device list. On
+machines without an NPU, CPU is the correct outcome.
 
 **REST API 401 / connection refused**
-Плагин и так читает vault с диска. REST нужен только для внешних сценариев.
-Ключ берётся из `.obsidian/plugins/obsidian-local-rest-api/data.json`.
+The plugin reads the vault from disk anyway. REST is only needed for external
+scenarios. The key is read from
+`.obsidian/plugins/obsidian-local-rest-api/data.json`.
 
-**Индекс устарел**
-Команда «Пересобрать векторный NPU-индекс заметок» или `--build-index`.
-При обычном поиске изменения подхватываются автоматически по `mtime`.
+**Index is stale**
+Run "Rebuild the NPU vector index" or `--build-index`. During normal search,
+changes are picked up automatically by `mtime`.
 
 ---
 
-## 📄 Лицензия
+## Roadmap
+
+Planned improvements, measurements and rejected options: [ROADMAP.md](ROADMAP.md).
+
+---
+
+## License
 
 MIT
